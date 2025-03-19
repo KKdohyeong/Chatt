@@ -1,0 +1,32 @@
+version: '3.1'
+
+services:
+  application:
+    container_name: chat-service-server
+    # JAR 빌드 산출물이 있는 위치(예: ../build/libs) 기준으로 Dockerfile COPY
+    build:
+      context: ../build/libs
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8080"
+    environment:
+      # Spring Boot 프로파일 -> prod
+      SPRING_PROFILES_ACTIVE: prod
+
+      # (1) AWS RDS 접속 정보
+      # 예: RDS 엔드포인트 (region: ap-southeast-2), DB 이름 ChattServiceServerDB (임의)
+      DB_URL: ${DB_URL}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # (2) OpenAI API Key, JWT Secret
+      OPENAI_KEY: ${OPENAI_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+
+    # (선택) 만약 다른 컨테이너가 필요 없다면 생략
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+    driver: bridge

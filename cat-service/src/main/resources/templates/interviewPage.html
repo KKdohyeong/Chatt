@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Page (Hybrid + Login Check)</title>
+    <script>
+        let currentInterviewId = null;
+
+        // (A) 인터뷰 시작
+        async function startInterview() {
+            const fieldValue = document.getElementById('fieldSelect').value;
+            if (!fieldValue) {
+                alert("분야를 선택하세요.");
+                return;
+            }
+
+            try {
+                // 1) POST /api/interviews -> 새 인터뷰 생성
+                const res = await fetch('/api/interviews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field: fieldValue })
+                });
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) {
+                        alert("로그인이 필요합니다.");
+                        window.location = '/login';
+                        return;
+                    }
+                    alert("인터뷰 시작 실패 code=" + res.status);
+                    return;
+                }
+                const data = await res.json(); // { interviewId }
+                currentInterviewId = data.interviewId;
+                console.log("[startInterview] interviewId=", currentInterviewId);
+
+                // (옵션) URL 갱신
+                history.pushState(null, '', '/interview/' + currentInterviewId);
+
+                // 2) 첫 질문 (기존 DB 질문)
+                await fetchNextQuestion();
+            } catch (err) {
+                console.error(err);
+                alert("인터뷰 시작 중 오류 발생");
+            }
+        }
+
+        // (B) 기존 DB 질문 가져오기
+        async function fetchNextQuestion() {
+            if (!currentInterviewId) return;
+            const url = `/api/interviews/${currentInterviewId}/next-question`;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    if (res.status===401 || res.status===403) {
+                        alert("로그인이 필요합니다");
+                        window.location='/login';
+                        return;
+                    }
+                    alert("오류 code="+res.status);
+                    return;
+                }
+                const data = await res.json();
+                // data = { noMore:true } or { questionId, content }
+
+                if (data.noMore) {
+                    document.getElementById('noMoreMsg').style.display='block';
+                    return;
+                }
+                // 질문이 있음
+                appendMessage("AI", data.content);
+                document.getElementById('answerSection').style.display='block';
+
+            } catch(err) {
+                console.error(err);
+                alert("fetchNextQuestion 오류");
+            }
+        }
+
+        // (C) 사용자 답변 전송 + ChatGPT 꼬리질문
+        async function sendAnswer() {
+            if (!currentInterviewId) return;
+            const answerVal = document.getElementById('userAnswer').value.trim();
+            if (!answerVal) {
+                alert("답변을 입력해주세요");
+                return;
+            }
+            // 사용자 답변 표시
+            appendMessage("USER", answerVal);
+            document.getElementById('userAnswer').value="";
+
+            try {
+                // 1) POST /api/interviews/{id}/answer
+                const url = `/api/interviews/${currentInterviewId}/answer`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: answerVal })
+                });
+                if (!res.ok) {
+                    if (res.status===401 || res.status===403) {
+                        alert("로그인이 필요합니다");
+                        window.location='/login';
+                        return;
+                    }
+                    alert("답변 전송 오류 code="+res.status);
+                    return;
+                }
+                const data = await res.json(); // { followUp: "...새 질문..." }
+                if (data.followUp) {
+                    // ChatGPT 꼬리질문
+                    appendMessage("AI", data.followUp);
+                } else if (data.noMore) {
+                    document.getElementById('noMoreMsg').style.display='block';
+                }
+            } catch(err) {
+                console.error(err);
+            }
+        }
+
+        function appendMessage(sender, text) {
+            const area = document.getElementById('chatArea');
+            const div = document.createElement('div');
+            div.textContent = sender + ": " + text;
+            area.appendChild(div);
+        }
+    </script>
+</head>
+<body>
+<h2>인터뷰 페이지</h2>
+
+<!-- 분야 선택 섹션 -->
+<div>
+    <label for="fieldSelect">분야 선택:</label>
+    <select id="fieldSelect" name="field">
+        <option value="">-- 분야 선택 --</option>
+        <!-- SSR: fields from model -->
+        <option th:each="f : ${fields}"
+                th:value="${f.name}"
+                th:text="${f.name}"></option>
+    </select>
+    <button type="button" onclick="startInterview()">인터뷰 시작</button>
+</div>
+
+<!-- 채팅 영역 -->
+<div id="chatArea" style="border:1px solid #ccc; width:400px; min-height:200px; margin-top:10px;">
+</div>
+
+<!-- 답변 입력 섹션 -->
+<div id="answerSection" style="display:none;">
+    <textarea id="userAnswer" rows="3" cols="40"></textarea><br/>
+    <button onclick="sendAnswer()">답변 전송</button>
+</div>
+
+<!-- "질문이 없습니다" 메시지 -->
+<div id="noMoreMsg" style="display:none; color:red; font-weight:bold;">
+    더 이상 질문이 없습니다!
+</div>
+
+</body>
+</html>
