@@ -1,0 +1,150 @@
+<!-- src/main/resources/templates/interviewPage.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Page</title>
+    <style>
+        /* 시작 화면 보이기, 채팅/입력 패널 숨기기 */
+        #chatPanel,
+        #answerPanel,
+        #noMoreMsg {
+            display: none;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow: auto;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<h2>인터뷰 페이지</h2>
+
+<!-- 1) 시작 화면 -->
+<div id="startPanel">
+    <label>분야 선택:
+        <select id="fieldSelect">
+            <option value="">-- 분야 선택 --</option>
+            <!-- fields 는 Controller 에서 model.addAttribute("fields", ...) 로 전달된 리스트입니다 -->
+            <option th:each="f : ${fields}"
+                    th:value="${f.name}"
+                    th:text="${f.name}"></option>
+        </select>
+    </label>
+    <button id="startBtn">인터뷰 시작</button>
+</div>
+
+<!-- 2) 채팅 화면 -->
+<div id="chatPanel">
+    <div id="messages"></div>
+
+    <!-- 3) 답변 입력 영역 -->
+    <div id="answerPanel">
+        <textarea id="answerInput" rows="3" style="width:100%;"></textarea><br>
+        <button id="sendBtn">전송</button>
+    </div>
+
+    <!-- 4) 질문 종료 메시지 -->
+    <div id="noMoreMsg" style="color:red; font-weight:bold;">
+        더 이상 질문이 없습니다!
+    </div>
+</div>
+
+<script>
+    let interviewId = null;
+
+    document.getElementById('startBtn').addEventListener('click', startInterview);
+    document.getElementById('sendBtn').addEventListener('click', sendAnswer);
+
+    // (1) 새 인터뷰 생성
+    async function startInterview() {
+        const field = document.getElementById('fieldSelect').value;
+        if (!field) {
+            alert('분야를 선택하세요.');
+            return;
+        }
+
+        const res = await fetch('/api/interviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ field })
+        });
+        if (!res.ok) {
+            alert('인터뷰 시작 실패: ' + res.status);
+            return;
+        }
+
+        const json = await res.json();
+        console.log(json);
+        // SuccessResponse<SingleResult<InterviewResponseDto>> 구조에서 ID 꺼내기
+        interviewId = json.data.result.id;  // 필요시 json.data.id 로 변경
+
+        // UI 전환
+        document.getElementById('startPanel').style.display = 'none';
+        document.getElementById('chatPanel').style.display  = 'block';
+
+        // (2) 첫 질문 가져오기
+        await fetchNextQuestion();
+    }
+
+    // (2) 다음 질문 가져오기
+    async function fetchNextQuestion() {
+        const res = await fetch(`/api/interviews/${interviewId}/next-question`);
+        if (!res.ok) {
+            alert('질문 로드 실패: ' + res.status);
+            return;
+        }
+
+        const json = await res.json();
+        if (json.noMore) {
+            document.getElementById('answerPanel').style.display = 'none';
+            document.getElementById('noMoreMsg').style.display   = 'block';
+        } else {
+            appendMessage('AI', json.content);
+            document.getElementById('answerPanel').style.display = 'block';
+        }
+    }
+
+    // (3) 답변 전송 및 꼬리질문 받기
+    async function sendAnswer() {
+        const text = document.getElementById('answerInput').value.trim();
+        if (!text) {
+            alert('답변을 입력해주세요');
+            return;
+        }
+
+        appendMessage('나', text);
+        document.getElementById('answerInput').value = '';
+
+        const res = await fetch(`/api/interviews/${interviewId}/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: text })
+        });
+        if (!res.ok) {
+            alert('답변 전송 실패: ' + res.status);
+            return;
+        }
+
+        const json = await res.json();
+        if (json.followUp) {
+            appendMessage('AI', json.followUp);
+        } else if (json.noMore) {
+            document.getElementById('answerPanel').style.display = 'none';
+            document.getElementById('noMoreMsg').style.display   = 'block';
+        }
+    }
+
+    // 메시지 출력 헬퍼
+    function appendMessage(who, msg) {
+        const div = document.createElement('div');
+        div.textContent = `${who}: ${msg}`;
+        document.getElementById('messages').appendChild(div);
+        const m = document.getElementById('messages');
+        m.scrollTop = m.scrollHeight;
+    }
+</script>
+</body>
+</html>
