@@ -16,6 +16,20 @@ ChattService는 개발자들이 기술 면접을 효과적으로 준비할 수 �
 - **프론트엔드**: HTML, CSS, JavaScript
 - **데이터베이스**: MySQL (예상)
 - **배포**: Docker, AWS (예상)
+- **API 문서화**: Swagger (OpenAPI 3.0)
+
+## API 문서화 (Swagger)
+이 프로젝트는 Swagger(OpenAPI 3.0)를 사용하여 API를 문서화하고 있습니다. 애플리케이션 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+Swagger UI를 통해 다음과 같은 작업을 수행할 수 있습니다:
+- 모든 API 엔드포인트 확인
+- API 요청 및 응답 구조 확인
+- API 직접 테스트
+- JWT 인증을 통한 보안 API 테스트
 
 ## 프로젝트 구조
 ```
