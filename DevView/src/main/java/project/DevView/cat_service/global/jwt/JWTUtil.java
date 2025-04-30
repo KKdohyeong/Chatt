@@ -45,13 +45,14 @@ public class JWTUtil {
                 .get("id", Integer.class); // PK
     }
 
-    public String createJwt(int userId, String username, String role, long expiredMs) {
+    public String createJwt(int userId, String username, String role, long expiredSec) {
+        long expMillis = expiredSec * 1000L;
         return Jwts.builder()
                 .claim("id", userId)         // user PK
                 .claim("username", username)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                .expiration(new Date(System.currentTimeMillis() + expMillis))
                 .signWith(secretKey)
                 .compact();
     }
