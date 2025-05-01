@@ -17,6 +17,18 @@ import project.DevView.cat_service.question.repository.UserQuestionHistoryReposi
 import java.util.List;
 import java.util.Optional;
 
+/*
+인터뷰
+질문1
+꼬리질문1-1
+꼬리질문1-2
+
+질문2
+
+질문3
+
+ */
+
 @Service
 @RequiredArgsConstructor
 public class InterviewFlowService {
