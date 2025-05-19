@@ -24,13 +24,12 @@
 
                 if (res.ok) {
                     // 가입 성공
-                    const userEntity = await res.json();
-                    alert("가입 성공! " + userEntity.username + " 님 환영합니다.");
+                    const { result } = await res.json();
+                    alert("가입 성공! " + result.data.username + " 님 환영합니다.");
                     window.location.href = '/login';
-                } else if (res.status === 400) {
-                    alert("이미 존재하는 사용자이거나 잘못된 입력값입니다.");
                 } else {
-                    alert("서버 오류가 발생. code=" + res.status);
+                    const error = await res.json();
+                    alert(error.message || "서버 오류가 발생했습니다.");
                 }
             } catch (err) {
                 console.error(err);

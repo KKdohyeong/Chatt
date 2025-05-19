@@ -16,6 +16,9 @@
         #answerInput{width:100%;box-sizing:border-box;padding:9px;border-radius:6px}
         #noMoreMsg{color:#d00;font-weight:700;margin-top:14px}
         button{cursor:pointer}
+        .action-buttons {margin-top:16px}
+        .action-button {padding:8px 12px;background:#f0f0f0;border:1px solid #ddd;border-radius:4px;cursor:pointer}
+        .action-button:hover {background:#e0e0e0}
     </style>
 </head>
 
@@ -33,6 +36,10 @@
         </select>
     </label>
     <button id="startBtn">인터뷰 시작</button>
+
+    <div class="action-buttons">
+        <button id="viewAllQuestionsBtn" class="action-button" disabled>모든 질문 보기</button>
+    </div>
 </div>
 
 <div id="chatPanel" style="display:none">
@@ -44,6 +51,10 @@
     </div>
 
     <div id="noMoreMsg" style="display:none">더 이상 질문이 없습니다!</div>
+
+    <div class="action-buttons">
+        <button id="viewAllQuestionsBtn2" class="action-button">모든 질문 보기</button>
+    </div>
 </div>
 
 <script>
@@ -53,8 +64,12 @@
     const noMoreMsg   = document.getElementById('noMoreMsg');
     const messages    = document.getElementById('messages');
     const answerInput = document.getElementById('answerInput');
+    const fieldSelect = document.getElementById('fieldSelect');
+    const viewAllQuestionsBtn = document.getElementById('viewAllQuestionsBtn');
+    const viewAllQuestionsBtn2 = document.getElementById('viewAllQuestionsBtn2');
 
     let interviewId = null;
+    let selectedField = "";
 
     document.getElementById('startBtn').addEventListener('click', startInterview);
     document.getElementById('sendBtn') .addEventListener('click', sendAnswer);
@@ -62,9 +77,29 @@
         if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAnswer(); }
     });
 
+    // 필드 선택 시 모든 질문 보기 버튼 활성화
+    fieldSelect.addEventListener('change', function() {
+        selectedField = fieldSelect.value;
+        viewAllQuestionsBtn.disabled = !selectedField;
+    });
+
+    // 모든 질문 보기 버튼 클릭 이벤트
+    viewAllQuestionsBtn.addEventListener('click', function() {
+        if (selectedField) {
+            window.location.href = `/questions/all?field=${selectedField}`;
+        }
+    });
+
+    // 채팅 화면에서 모든 질문 보기 버튼 클릭 이벤트
+    viewAllQuestionsBtn2.addEventListener('click', function() {
+        window.location.href = `/questions/all?field=${selectedField}`;
+    });
+
     async function startInterview(){
         const field=document.getElementById('fieldSelect').value;
         if(!field){ alert('분야를 선택하세요.'); return; }
+
+        selectedField = field; // 선택된 필드 저장
 
         const res=await fetch('/api/interviews',{
             method:'POST',
@@ -73,16 +108,19 @@
         });
         if(!res.ok){ alert('인터뷰 시작 실패('+res.status+')'); return; }
 
-        const json=await res.json();
-        console.log('createInterview ▶', json);
+        const responseData = await res.json();
+        console.log('전체 응답 데이터:', responseData);
+        console.log('result:', responseData.result);
+        console.log('data:', responseData.result?.data);
+
+        const { result } = responseData;
+        console.log('createInterview ▶', result);
 
         /* SuccessResponse.result → SingleResult.data.interviewId */
-        interviewId =
-            json?.result?.data?.interviewId      // 현재 백엔드 구조
-            ?? json?.result?.data?.id               // 혹시 id 로 바뀔 경우 대비
-            ?? json?.result?.result?.id;            // 예전 방어
+        interviewId = result.data.interviewId;
 
         if(!interviewId){
+            console.error('응답 구조:', responseData);
             alert('응답에서 인터뷰 ID를 찾지 못했습니다.');
             return;
         }
@@ -97,12 +135,12 @@
         const res=await fetch(`/api/interviews/${interviewId}/next-question`);
         if(!res.ok){ alert('질문 로드 실패('+res.status+')'); return; }
 
-        const json=await res.json();
-        if(json.noMore){
+        const { result } = await res.json();
+        if(result.data.noMore){
             answerPanel.style.display='none'; noMoreMsg.style.display='block';
             return;
         }
-        appendMsg('ai', json.content);
+        appendMsg('ai', result.data.content);
         answerPanel.style.display='block';
     }
 
@@ -120,10 +158,10 @@
         });
         if(!res.ok){ alert('답변 전송 실패('+res.status+')'); return; }
 
-        const json=await res.json();
-        if(json.followUp){
-            appendMsg('ai', json.followUp);
-        }else if(json.noMore){
+        const { result } = await res.json();
+        if(result.data.followUp){
+            appendMsg('ai', result.data.followUp);
+        }else if(result.data.noMore){
             answerPanel.style.display='none'; noMoreMsg.style.display='block';
         }
     }

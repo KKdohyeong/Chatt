@@ -3,6 +3,7 @@ package project.DevView.cat_service.interview.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import project.DevView.cat_service.ai.service.ChatGptService;
 import project.DevView.cat_service.global.exception.CustomException;
 import project.DevView.cat_service.global.exception.ErrorCode;
 import project.DevView.cat_service.interview.entity.Interview;
@@ -17,18 +18,6 @@ import project.DevView.cat_service.question.repository.UserQuestionHistoryReposi
 import java.util.List;
 import java.util.Optional;
 
-/*
-인터뷰
-질문1
-꼬리질문1-1
-꼬리질문1-2
-
-질문2
-
-질문3
-
- */
-
 @Service
 @RequiredArgsConstructor
 public class InterviewFlowService {
@@ -37,12 +26,12 @@ public class InterviewFlowService {
     private final QuestionRepository             questionRepository;
     private final InterviewMessageRepository     messageRepository;
     private final UserQuestionHistoryRepository  historyRepository;
-    private final ChatGptService                 chatGptService;
+    private final ChatGptService chatGptService;
 
     /**
      * (1) 아직 답변 안 한 질문 한 개 꺼내기
      */
-    public Question getNextQuestion(int userId, Long interviewId) {
+    public Question getNextQuestion(long userId, Long interviewId) {
         Interview iv = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_EXIST));
 
@@ -94,7 +83,7 @@ public class InterviewFlowService {
     /**
      * (6) 현재 꼬리질문 종료 처리
      */
-    public void finishCurrentQuestion(Long interviewId, int userId) {
+    public void finishCurrentQuestion(Long interviewId, long userId) {
         Interview iv = loadInterview(interviewId);
         // primitive int 비교
         if (iv.getUser().getId() != userId) {

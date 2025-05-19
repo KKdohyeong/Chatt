@@ -52,19 +52,27 @@ public class SecurityConfig {
         http
                 .httpBasic((auth) -> auth.disable());
 
+        // Chrome DevTools 관련 경로는 보안 필터 체인에서 제외
+        http
+                .securityMatcher(request -> {
+                    String path = request.getServletPath();
+                    return !path.startsWith("/.well-known/");
+                });
+
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers( "/api/v1/img/**", "/",
                                 "/api/v1/join", "/api/v1/login", "/login",
-                                "/interview", "/joinPage",
+                                "/interview", "/interview-mode", "/joinPage", "/questions/all", 
                                 "/error", "/error/**",
                                 "/css/**", "/js/**", "/favicon.ico", "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()
+                        .requestMatchers("/login", "/joinPage").anonymous()
+                        .requestMatchers("/interview-mode").permitAll()
                         .anyRequest().authenticated());
-
 
         // 세션을 사용하지 않음 (JWT stateless 방식)
         http.sessionManagement(session ->
