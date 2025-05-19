@@ -1,16 +1,18 @@
-version: '3.1'
+version: "3.8"
 
 services:
   cat-service:
-    image: kkdohyeong/devview:1.0
+    image: kkdohyeong/devview:${IMAGE_TAG:-latest}
     container_name: cat-service
+    restart: always
     ports:
       - "8000:8080"
+    env_file:
+      - .env            # Jenkins가 덮어쓰는 파일
     environment:
-      SPRING_PROFILES_ACTIVE: prod  # 나머지는 .env 가 자동 주입
-    networks:
-      - backend_network
+      SPRING_PROFILES_ACTIVE: prod
+    networks: [ backend ]
 
 networks:
-  backend_network:
+  backend:
     driver: bridge
