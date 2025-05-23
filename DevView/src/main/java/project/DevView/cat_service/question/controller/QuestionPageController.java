@@ -1,7 +1,5 @@
 package project.DevView.cat_service.question.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import project.DevView.cat_service.question.entity.Field;
 import project.DevView.cat_service.question.service.FieldService;
 import project.DevView.cat_service.question.service.QuestionService;
@@ -21,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @RequestMapping("/questions")
 @RequiredArgsConstructor
-@Tag(name = "Question Page", description = "질문 관련 SSR 페이지")
 public class QuestionPageController {
 
     private final FieldService fieldService;
@@ -32,7 +29,6 @@ public class QuestionPageController {
      *    GET /admin/questions/new
      */
     @GetMapping("/new")
-    @Operation(summary = "질문 생성 폼", description = "새 질문 생성을 위한 폼 페이지")
     public String newQuestionPage(Model model) {
         List<Field> allFields = fieldService.getAllFieldEntities();
         model.addAttribute("allFields", allFields);
@@ -44,7 +40,6 @@ public class QuestionPageController {
      *    GET /questions/all?field=OS
      */
     @GetMapping("/all")
-    @Operation(summary = "분야별 전체 질문 목록", description = "특정 분야의 모든 질문 목록을 보여주는 페이지 (답변 여부 포함)")
     public String allQuestionsPage(
             @RequestParam("field") String fieldName,
             @AuthenticationPrincipal CustomUserDetails user,

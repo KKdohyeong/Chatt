@@ -134,7 +134,7 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    window.location.href = `/interview/${resumeId}`;
+                    window.location.href = `/resume-interview/${resumeId}/interview`;
                 } else {
                     throw new Error(result.message || '질문 생성에 실패했습니다.');
                 }

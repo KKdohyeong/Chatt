@@ -1,15 +1,11 @@
 package project.DevView.cat_service.question.dto.request;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
-import lombok.Getter;
+import jakarta.validation.constraints.Size;
 
-
-@Builder
 public record FieldCreateRequestDto(
-        @NotBlank
-        @Schema(description = "Field 이름", example = "OS")
+        @NotBlank(message = "Field 이름은 필수입니다.")
+        @Size(min = 1, max = 50, message = "Field 이름은 1~50자 사이여야 합니다.")
         String name
 ) {
 }

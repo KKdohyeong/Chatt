@@ -3,65 +3,70 @@ package project.DevView.cat_service.resume.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import project.DevView.cat_service.ai.service.ResumeAIService;
 import project.DevView.cat_service.resume.dto.TagQuestionResponse;
-import project.DevView.cat_service.resume.entity.Resume;
 import project.DevView.cat_service.resume.entity.ResumeTag;
 import project.DevView.cat_service.resume.entity.TagQuestion;
-import project.DevView.cat_service.resume.repository.ResumeRepository;
 import project.DevView.cat_service.resume.repository.ResumeTagRepository;
 import project.DevView.cat_service.resume.repository.TagQuestionRepository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class TagQuestionService {
 
-    private final ResumeRepository resumeRepository;
     private final ResumeTagRepository resumeTagRepository;
     private final TagQuestionRepository tagQuestionRepository;
-    private final ResumeAIService resumeAIService;
 
     @Transactional
-    public TagQuestionResponse generateQuestionsForResume(Long resumeId) {
-        Resume resume = resumeRepository.findById(resumeId)
-            .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+    public TagQuestionResponse.QuestionItem getNextQuestion(Long resumeId) {
+        // 1. 우선순위가 높은 미답변 태그 찾기
+        List<ResumeTag> unaskedTags = resumeTagRepository.findUnaskedTagsByResumeIdOrderByPriorityDesc(resumeId);
+        if (unaskedTags.isEmpty()) {
+            throw new IllegalStateException("모든 태그에 대한 질문이 완료되었습니다.");
+        }
 
-        // 해당 resume의 태그들 중에서 아직 완료되지 않은 질문이 있는 태그를 찾음
-        List<ResumeTag> tags = resumeTagRepository.findByResumeId(resumeId);
+        ResumeTag selectedTag = unaskedTags.get(0);  // 우선순위가 가장 높은 태그
+
+        // 2. 해당 태그의 미답변 질문 찾기
+        List<TagQuestion> unaskedQuestions = tagQuestionRepository.findUnaskedQuestionsByResumeTagId(selectedTag.getId());
+        if (unaskedQuestions.isEmpty()) {
+            // 현재 태그의 모든 질문이 완료되었으므로 태그를 완료 처리
+            selectedTag.setAskedAll(true);
+            // 다음 태그의 질문을 가져오기 위해 재귀 호출
+            return getNextQuestion(resumeId);
+        }
+
+        // 3. 랜덤하게 하나 선택
+        TagQuestion selectedQuestion = unaskedQuestions.get(0);  // 이미 RANDOM()으로 정렬되어 있음
         
-        // 각 태그별로 완료되지 않은 질문 수를 확인
-        for (ResumeTag tag : tags) {
-            List<TagQuestion> incompleteQuestions = tagQuestionRepository.findByResumeTagIdAndIsCompletedFalse(tag.getId());
+        // 4. 질문을 asked로 표시하고 꼬리 질문 카운트 증가
+        selectedQuestion.setAsked(true);
+        selectedQuestion.setFollowUpCount(selectedQuestion.getFollowUpCount() + 1);
+        
+        // 5. 꼬리 질문이 2번 완료되었으면 질문을 완료 처리
+        if (selectedQuestion.getFollowUpCount() >= 2) {
+            selectedQuestion.setCompleted(true);
             
-            // 해당 태그에 대한 질문이 없거나 모두 완료된 경우에만 새로운 질문 생성
-            if (incompleteQuestions.isEmpty()) {
-                // AI 서비스를 통해 질문 생성 (단일 태그를 리스트로 감싸서 전달)
-                TagQuestionResponse response = resumeAIService.generateQuestions(List.of(tag));
-                
-                // 생성된 질문들을 저장
-                List<TagQuestion> questions = response.getQuestions().stream()
-                    .map(question -> TagQuestion.builder()
-                        .resumeTag(tag)
-                        .baseQuestion(question.getBaseQuestion())
-                        .createdQuestion(question.getCreatedQuestion())
-                        .isCompleted(false)
-                        .build())
-                    .collect(Collectors.toList());
-
-                tagQuestionRepository.saveAll(questions);
-                return response;
+            // 태그의 모든 질문이 완료되었는지 확인
+            long remainingIncomplete = tagQuestionRepository.countByResumeTagIdAndIsCompletedFalse(selectedTag.getId());
+            if (remainingIncomplete == 0) {
+                selectedTag.setAskedAll(true);
             }
         }
 
-        throw new IllegalStateException("모든 태그에 대한 질문이 이미 생성되어 있습니다.");
+        return TagQuestionResponse.QuestionItem.builder()
+            .id(selectedQuestion.getId())
+            .tagId(selectedTag.getId())
+            .keyword(selectedTag.getKeyword())
+            .detail(selectedTag.getDetail())
+            .baseQuestion(selectedQuestion.getBaseQuestion())
+            .createdQuestion(selectedQuestion.getCreatedQuestion())
+            .build();
     }
 
     @Transactional
     public void markQuestionAsCompleted(Long resumeId, Long questionId) {
-        // resumeId로 해당 질문이 실제로 해당 이력서에 속하는지 확인
         TagQuestion question = tagQuestionRepository.findById(questionId)
             .orElseThrow(() -> new IllegalArgumentException("Question not found"));
 
@@ -69,6 +74,14 @@ public class TagQuestionService {
             throw new IllegalArgumentException("Question does not belong to the specified resume");
         }
 
+        // 질문 완료 처리
         question.setCompleted(true);
+
+        // 태그의 모든 질문이 완료되었는지 확인
+        ResumeTag tag = question.getResumeTag();
+        long remainingIncomplete = tagQuestionRepository.countByResumeTagIdAndIsCompletedFalse(tag.getId());
+        if (remainingIncomplete == 0) {
+            tag.setAskedAll(true);
+        }
     }
 } 

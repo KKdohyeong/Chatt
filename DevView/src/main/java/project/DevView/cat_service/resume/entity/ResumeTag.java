@@ -37,6 +37,9 @@ public class ResumeTag extends TimeStamp {
     @Column(nullable = false)
     private int priorityScore;  // 태그의 우선순위 점수
 
+    @Column(nullable = false)
+    private boolean askedAll;  // 모든 질문이 한 번이라도 제시되었는지 여부
+
     @OneToMany(mappedBy = "resumeTag", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TagQuestion> questions = new HashSet<>();
 
@@ -47,7 +50,8 @@ public class ResumeTag extends TimeStamp {
                     String keyword,
                     String detail,
                     int depthScore,
-                    int priorityScore) {
+                    int priorityScore,
+                    boolean askedAll) {
         this.id = id;
         this.resume = resume;
         this.tagType = tagType;
@@ -55,6 +59,7 @@ public class ResumeTag extends TimeStamp {
         this.detail = detail;
         this.depthScore = depthScore;
         this.priorityScore = priorityScore;
+        this.askedAll = askedAll;
     }
 
     public void addQuestion(TagQuestion question) {

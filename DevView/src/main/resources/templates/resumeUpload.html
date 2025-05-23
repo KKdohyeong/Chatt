@@ -146,6 +146,7 @@
             
             const content = document.getElementById('resumeContent').value;
             const errorMessage = document.getElementById('errorMessage');
+            const submitButton = document.querySelector('.submit-button');
             const loading = document.getElementById('loading');
             
             // 입력 검증
@@ -161,11 +162,14 @@
                 return;
             }
             
+            // 버튼 비활성화 및 로딩 표시
+            submitButton.disabled = true;
             errorMessage.style.display = 'none';
             loading.classList.add('active');
             
             try {
-                const response = await fetch('/api/resumes', {
+                // 1. 이력서 저장
+                const saveResponse = await fetch('/api/resumes', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -173,18 +177,33 @@
                     body: JSON.stringify({ content })
                 });
                 
-                if (!response.ok) {
+                if (!saveResponse.ok) {
                     throw new Error('이력서 업로드에 실패했습니다.');
                 }
                 
-                const { result } = await response.json();
-                // 이력서 분석이 완료되면 태그 생성 페이지로 이동
-                window.location.href = `/resume-interview/${result.data.id}/tags`;
+                const { result } = await saveResponse.json();
+                const resumeId = result.data.id;
+
+                // 2. 태그 및 질문 생성 시작
+                const analyzeResponse = await fetch(`/api/resumes/${resumeId}/tags`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!analyzeResponse.ok) {
+                    throw new Error('태그 및 질문 생성에 실패했습니다.');
+                }
+
+                // 3. 생성 상태 확인 페이지로 이동
+                window.location.href = `/resume-interview/${resumeId}/generating`;
                 
             } catch (error) {
                 errorMessage.textContent = error.message;
                 errorMessage.style.display = 'block';
                 loading.classList.remove('active');
+                submitButton.disabled = false;  // 에러 발생 시 버튼 다시 활성화
             }
         }
     </script>

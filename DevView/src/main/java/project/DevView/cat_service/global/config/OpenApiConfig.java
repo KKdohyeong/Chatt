@@ -15,8 +15,8 @@ import org.springframework.context.annotation.Configuration;
                 description = "API 명세서",
                 version = "v1",
                 contact = @Contact(
-                        name = "정현정",
-                        email = "cathy2750@naver.com"
+                        name = "김도형",
+                        email = "dohyeong254@naver.com"
                 )
         ),
         security = @SecurityRequirement(name = "bearerAuth")

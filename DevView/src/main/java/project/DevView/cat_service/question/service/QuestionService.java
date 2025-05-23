@@ -16,7 +16,6 @@ import project.DevView.cat_service.question.repository.FieldRepository;
 import project.DevView.cat_service.question.repository.UserQuestionHistoryRepository;
 import project.DevView.cat_service.question.mapper.QuestionMapper;
 
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

@@ -14,6 +14,7 @@ import project.DevView.cat_service.resume.dto.ResumeTagResponse;
 import project.DevView.cat_service.resume.dto.TagQuestionResponse;
 import project.DevView.cat_service.resume.entity.ResumeTag;
 import project.DevView.cat_service.resume.entity.TagType;
+import project.DevView.cat_service.resume.dto.ResumeTagForQuestionDto;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -270,11 +271,15 @@ private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("(?s)^```(?:js
      * @return               모든 (keyword × base_question) 쌍에 대한 created_question 리스트
      */
     public TagQuestionResponse generateQuestions(List<ResumeTag> keywordItems) {
+        // 엔티티를 DTO로 변환
+        List<ResumeTagForQuestionDto> dtoList = keywordItems.stream()
+                .map(ResumeTagForQuestionDto::from)
+                .toList();
 
         /* 1️⃣ 입력 배열을 JSON 문자열로 직렬화 */
         String keywordItemsJson;
         try {
-            keywordItemsJson = objectMapper.writeValueAsString(keywordItems);
+            keywordItemsJson = objectMapper.writeValueAsString(dtoList);
         } catch (Exception e) {
             throw new IllegalStateException("KEYWORD_ITEMS 직렬화 실패", e);
         }
@@ -325,16 +330,19 @@ private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("(?s)^```(?:js
 
         ───────────────────────────────
         ## 출력 스키마 (JSON)
-
+        반드시 다음 형식의 JSON 배열을 반환하세요:
         [
           {
             "keyword"          : "<keyword 원문>",
             "detail"           : "<detail 원문>",
             "base_question"    : "<표의 base_question 원문>",
             "created_question" : "<생성된 실제 질문 문장>"
-          }
-          … 모든 키워드 × base_question 조합 …
+          },
+          ... (모든 키워드 × base_question 조합)
         ]
+
+        > 중요: 반드시 배열([])로 시작하고 끝나야 합니다.
+        > 객체({})가 아닌 배열([])을 반환하세요.
 
         ───────────────────────────────
         ## [KEYWORD_ITEMS]
@@ -343,15 +351,15 @@ private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("(?s)^```(?:js
 
         /* 3️⃣ OpenAI 요청 */
         ChatMessage systemMsg = new ChatMessage("system",
-                "너는 면접 질문 생성기이다. 반드시 JSON 스펙을 지켜라.");
+                "너는 면접 질문 생성기이다. 반드시 JSON 배열([])을 반환하라. 객체({})가 아니다.");
         ChatMessage userMsg = new ChatMessage("user", fullPrompt);
 
         ChatRequest request = new ChatRequest(
                 model,
                 new ChatMessage[]{systemMsg, userMsg},
-                800,
+                3200,
                 0.7,
-                Map.of("type", "json_object")  // JSON 형식 강제
+                        null                           // ← 루트 배열 반환을 유도 (옵션 제거)
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -374,10 +382,12 @@ private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("(?s)^```(?:js
         /* 4️⃣ 타입-안전 역직렬화 */
         List<QuestionRaw> raws;
         try {
-            raws = objectMapper.readValue(json,
+            String cleanedJson = cleanJsonResponse(json);
+            raws = objectMapper.readValue(cleanedJson,
                     new TypeReference<>() {});
         } catch (Exception e) {
-            throw new RuntimeException("질문 JSON 파싱 실패", e);
+            log.error("질문 JSON 파싱 실패 - 원본: {}", json);
+            throw new RuntimeException("질문 JSON 파싱 실패: " + e.getMessage(), e);
         }
 
         /* 5️⃣ DTO 변환 */

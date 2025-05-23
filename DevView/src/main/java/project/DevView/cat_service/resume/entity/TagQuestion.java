@@ -15,7 +15,7 @@ public class TagQuestion extends TimeStamp {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_tag_id")
+    @JoinColumn(name = "resume_tag_id", nullable = false)
     private ResumeTag resumeTag;
 
     @Column(nullable = false)
@@ -27,6 +27,12 @@ public class TagQuestion extends TimeStamp {
     @Column(nullable = false)
     private boolean isCompleted;    // 질문 완료 여부
 
+    @Column(nullable = false)
+    private boolean isAsked;  // 질문이 한 번이라도 제시되었는지 여부
+
+    @Column(nullable = false)
+    private int followUpCount;
+
     public void setResumeTag(ResumeTag resumeTag) {
         this.resumeTag = resumeTag;
     }
@@ -36,11 +42,26 @@ public class TagQuestion extends TimeStamp {
                       ResumeTag resumeTag,
                       String baseQuestion,
                       String createdQuestion,
-                      boolean isCompleted) {
+                      boolean isCompleted,
+                      boolean isAsked) {
         this.id = id;
         this.resumeTag = resumeTag;
         this.baseQuestion = baseQuestion;
         this.createdQuestion = createdQuestion;
         this.isCompleted = isCompleted;
+        this.isAsked = isAsked;
+        this.followUpCount = 0;
+    }
+
+    public void setAsked(boolean asked) {
+        isAsked = asked;
+    }
+
+    public void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
+
+    public void setFollowUpCount(int followUpCount) {
+        this.followUpCount = followUpCount;
     }
 } 

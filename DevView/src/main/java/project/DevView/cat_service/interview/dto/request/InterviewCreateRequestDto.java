@@ -8,5 +8,8 @@ import lombok.Builder;
 public record InterviewCreateRequestDto(
         @NotBlank
         @Schema(description = "인터뷰 분야 이름", example = "OS")
-        String field
+        String field,
+
+        @Schema(description = "이력서 ID", example = "1")
+        Long resumeId
 ) {}

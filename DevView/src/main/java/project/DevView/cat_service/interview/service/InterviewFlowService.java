@@ -96,6 +96,12 @@ public class InterviewFlowService {
                 ));
     }
 
+    public String createFollowUpQuestionForResume(String resumeContent, String answer) {
+        // 이력서 내용을 컨텍스트로 사용하여 꼬리 질문 생성
+        // TODO: AI 서비스를 통해 이력서 내용과 답변을 기반으로 꼬리 질문 생성
+        return "이력서 내용과 답변을 기반으로 한 꼬리 질문입니다.";
+    }
+
     /* internal */
     private Interview loadInterview(Long id) {
         return interviewRepository.findById(id)

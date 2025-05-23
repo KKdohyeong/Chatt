@@ -9,6 +9,7 @@ import project.DevView.cat_service.resume.entity.Resume;
 import project.DevView.cat_service.resume.repository.ResumeRepository;
 import project.DevView.cat_service.user.entity.UserEntity;
 import project.DevView.cat_service.user.repository.UserRepository;
+import project.DevView.cat_service.interview.service.InterviewFlowService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ public class ResumeService {
 
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
+    private final InterviewFlowService interviewFlowService;
 
     @Transactional
     public ResumeResponse createResume(Long userId, ResumeRequest request) {
@@ -70,5 +72,13 @@ public class ResumeService {
         }
 
         resumeRepository.delete(resume);
+    }
+
+    @Transactional(readOnly = true)
+    public String createFollowUpQuestion(Long resumeId, String answer) {
+        Resume resume = resumeRepository.findById(resumeId)
+            .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+        
+        return interviewFlowService.createFollowUpQuestionForResume(resume.getContent(), answer);
     }
 } 
