@@ -19,7 +19,32 @@ public interface UserQuestionHistoryRepository extends JpaRepository<UserQuestio
         WHERE h.user.id = :userId
           AND h.completed = true
     """)
-    List<Long> findAnsweredQuestionIds(@Param("userId") int userId);
+    List<Long> findAnsweredQuestionIds(@Param("userId") Long userId);
+    
+    /**
+     * userId가 이미 완료한 UserQuestionHistory 목록
+     */
+    @Query("""
+        SELECT h
+        FROM UserQuestionHistory h
+        WHERE h.user.id = :userId
+          AND h.completed = true
+    """)
+    List<UserQuestionHistory> findAllCompletedByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 특정 필드에 대해 userId가 완료한 UserQuestionHistory 목록
+     */
+    @Query("""
+        SELECT h
+        FROM UserQuestionHistory h
+        JOIN h.question q
+        JOIN q.fields f
+        WHERE h.user.id = :userId
+          AND f.name = :fieldName
+          AND h.completed = true
+    """)
+    List<UserQuestionHistory> findAllCompletedByUserIdAndField(@Param("userId") Long userId, @Param("fieldName") String fieldName);
 
     /**
      * 특정 userId & questionId에 대해 completed=true로 업데이트 (꼬리질문 종료 시점 등)
@@ -33,6 +58,6 @@ public interface UserQuestionHistoryRepository extends JpaRepository<UserQuestio
         WHERE h.user.id = :userId
           AND h.question.id = :questionId
     """)
-    void markQuestionCompleted(@Param("userId") int userId,
+    void markQuestionCompleted(@Param("userId") Long userId,
                               @Param("questionId") Long questionId);
 }

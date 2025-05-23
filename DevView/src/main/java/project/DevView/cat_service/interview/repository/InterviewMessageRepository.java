@@ -29,5 +29,4 @@ public interface InterviewMessageRepository extends JpaRepository<InterviewMessa
          LIMIT 1
     """, nativeQuery = true)
     Optional<InterviewMessage> findLastQuestionMessage(@Param("interviewId") Long interviewId);
-
 }

@@ -15,7 +15,7 @@ public record InterviewResponseDto(
 
         @NotNull
         @Schema(description = "사용자 ID", example = "42")
-        Integer userId,
+        Long userId,
 
         @NotNull
         @Schema(description = "인터뷰 분야 이름", example = "OS")

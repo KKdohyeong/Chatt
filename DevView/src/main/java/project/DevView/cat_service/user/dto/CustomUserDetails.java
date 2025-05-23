@@ -23,7 +23,7 @@ public class CustomUserDetails implements UserDetails {
         return this.user;
     }
 
-    public int getId() {
+    public Long getId() {
         return this.user.getId(); // UserEntity의 PK
     }
 

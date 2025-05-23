@@ -14,6 +14,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -41,9 +46,30 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",        // 개발 환경
+            "http://13.239.22.1:8000",      // 실제 서비스 IP (HTTP + 포트)
+            "https://13.239.22.1:8000",     // 실제 서비스 IP (HTTPS + 포트)
+            "http://13.239.22.1",           // 포트 없는 버전도 허용
+            "https://13.239.22.1"           // 포트 없는 버전도 허용
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf((auth) -> auth.disable());
 
         http
@@ -52,19 +78,27 @@ public class SecurityConfig {
         http
                 .httpBasic((auth) -> auth.disable());
 
+        // Chrome DevTools 관련 경로는 보안 필터 체인에서 제외
+        http
+                .securityMatcher(request -> {
+                    String path = request.getServletPath();
+                    return !path.startsWith("/.well-known/");
+                });
+
         http
                 .authorizeHttpRequests((auth) -> auth
                         .requestMatchers( "/api/v1/img/**", "/",
                                 "/api/v1/join", "/api/v1/login", "/login",
-                                "/interview", "/joinPage",
+                                "/interview", "/interview-mode", "/joinPage", "/questions/all", 
                                 "/error", "/error/**",
                                 "/css/**", "/js/**", "/favicon.ico", "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()
+                        .requestMatchers("/login", "/joinPage").anonymous()
+                        .requestMatchers("/interview-mode").permitAll()
                         .anyRequest().authenticated());
-
 
         // 세션을 사용하지 않음 (JWT stateless 방식)
         http.sessionManagement(session ->

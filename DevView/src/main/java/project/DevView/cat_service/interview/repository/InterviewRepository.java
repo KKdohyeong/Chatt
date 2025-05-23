@@ -9,7 +9,7 @@ import java.util.List;
 public interface InterviewRepository extends JpaRepository<Interview, Long> {
 
     // 사용자 + 분야로 인터뷰 목록 찾기
-    List<Interview> findByUserIdAndField(int userId, Field field);
+    List<Interview> findByUserIdAndField(Long userId, Field field);
 
     // 필요하다면 다른 쿼리 메서드 추가
 }

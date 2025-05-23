@@ -1,6 +1,5 @@
 package project.DevView.cat_service.question.dto.request;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;

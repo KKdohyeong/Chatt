@@ -36,21 +36,22 @@ public class JWTUtil {
         return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
     }
 
-    public int getId(String token) {
+    public Long getId(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("id", Integer.class); // PK
+                .get("id", Long.class); // PK
     }
 
-    public String createJwt(int userId, String username, String role, long expiredMs) {
+    public String createJwt(Long userId, String username, String role, long expiredSec) {
+        long expiredMs = expiredSec * 1000L;
         return Jwts.builder()
-                .claim("id", userId)         // user PK
+                .claim("id", userId)
                 .claim("username", username)
                 .claim("role", role)
-                .issuedAt(new Date(System.currentTimeMillis()))
+                .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)
                 .compact();

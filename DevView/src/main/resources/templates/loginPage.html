@@ -4,33 +4,13 @@
     <meta charset="UTF-8"/>
     <title>로그인</title>
     <script>
-        async function doLogin() {
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-
-            const params = new URLSearchParams();
-            params.append("username", username);
-            params.append("password", password);
-
-            try {
-                const res = await fetch("/api/v1/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: params
-                });
-
-                if (res.ok) {
-                    // 서버에서 쿠키가 Set-Cookie로 내려옴 (JS에서는 볼 수 없음, HttpOnly)
-                    alert("로그인 성공! 쿠키가 설정되었습니다.");
-                    window.location.href = "/interview";
-                } else {
-                    alert("로그인 실패! 아이디/비번 확인: code=" + res.status);
-                }
-            } catch (err) {
-                console.error(err);
-                alert("로그인 중 오류 발생!");
+        // URL에서 redirect 파라미터 가져오기
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect');
+            if (redirectUrl) {
+                // hidden input에 redirect URL 저장 (전체 URL 보존)
+                document.getElementById('redirectUrl').value = decodeURIComponent(redirectUrl);
             }
         }
     </script>
@@ -38,14 +18,15 @@
 <body>
 <h1>로그인 페이지</h1>
 
-<form onsubmit="doLogin(); return false;">
+<form action="/api/v1/login" method="post">
+    <input type="hidden" id="redirectUrl" name="redirect" value="/interview-mode">
     <div>
         <label>아이디</label>
-        <input type="text" id="username" />
+        <input type="text" name="username" required />
     </div>
     <div>
         <label>비밀번호</label>
-        <input type="password" id="password" />
+        <input type="password" name="password" required />
     </div>
     <button type="submit">로그인</button>
 </form>

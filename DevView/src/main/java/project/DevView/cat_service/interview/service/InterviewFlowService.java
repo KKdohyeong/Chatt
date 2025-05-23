@@ -3,6 +3,7 @@ package project.DevView.cat_service.interview.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import project.DevView.cat_service.ai.service.ChatGptService;
 import project.DevView.cat_service.global.exception.CustomException;
 import project.DevView.cat_service.global.exception.ErrorCode;
 import project.DevView.cat_service.interview.entity.Interview;
@@ -25,12 +26,12 @@ public class InterviewFlowService {
     private final QuestionRepository             questionRepository;
     private final InterviewMessageRepository     messageRepository;
     private final UserQuestionHistoryRepository  historyRepository;
-    private final ChatGptService                 chatGptService;
+    private final ChatGptService chatGptService;
 
     /**
      * (1) 아직 답변 안 한 질문 한 개 꺼내기
      */
-    public Question getNextQuestion(int userId, Long interviewId) {
+    public Question getNextQuestion(long userId, Long interviewId) {
         Interview iv = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_EXIST));
 
@@ -82,7 +83,7 @@ public class InterviewFlowService {
     /**
      * (6) 현재 꼬리질문 종료 처리
      */
-    public void finishCurrentQuestion(Long interviewId, int userId) {
+    public void finishCurrentQuestion(Long interviewId, long userId) {
         Interview iv = loadInterview(interviewId);
         // primitive int 비교
         if (iv.getUser().getId() != userId) {
@@ -93,6 +94,12 @@ public class InterviewFlowService {
                 .ifPresent(m -> historyRepository.markQuestionCompleted(
                         userId, m.getQuestion().getId()
                 ));
+    }
+
+    public String createFollowUpQuestionForResume(String resumeContent, String answer) {
+        // 이력서 내용을 컨텍스트로 사용하여 꼬리 질문 생성
+        // TODO: AI 서비스를 통해 이력서 내용과 답변을 기반으로 꼬리 질문 생성
+        return "이력서 내용과 답변을 기반으로 한 꼬리 질문입니다.";
     }
 
     /* internal */

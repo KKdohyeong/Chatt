@@ -13,6 +13,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.core.GrantedAuthority;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -36,7 +37,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String username = obtainUsername(request);
         String password = obtainPassword(request);
 
-        System.out.println("[LoginFilter] attemptAuthentication -> username=" + username + ", password=" + password);
+        System.out.println("[LoginFilter] attemptAuthentication -> username=" + username + ", password=" + (password != null ? "****" : "null"));
 
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(username, password, null);
@@ -50,12 +51,12 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             HttpServletResponse response,
             FilterChain chain,
             Authentication authentication
-    ) {
+    ) throws IOException {
         System.out.println("[LoginFilter] successfulAuthentication -> user=" + authentication.getName());
 
         // (1) UserDetails에서 username, role, userId 추출
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        int userId = customUserDetails.getId(); // DB PK
+        long userId = customUserDetails.getId(); // DB PK
         String username = customUserDetails.getUsername();
 
         Collection<? extends GrantedAuthority> authorities = customUserDetails.getAuthorities();
@@ -71,14 +72,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         System.out.println("[LoginFilter] JWT Token Created: " + token);
 
-        // (3) ResponseCookie
+        // (3) ResponseCookie - 쿠키 설정 개선
         ResponseCookie jwtCookie = ResponseCookie.from("Auth", token)
                 .httpOnly(true)
                 .secure(false)    // 로컬 http
-                .path("/")
+                .path("/")       // 모든 경로에서 접근 가능하도록 설정
                 .maxAge(expirationSeconds)
-                // .sameSite("None")   // 필요 시 None
-                .sameSite("Lax")
+                .sameSite("Lax") // Lax 설정 유지
                 .build();
 
         System.out.println("[LoginFilter] ResponseCookie: " + jwtCookie);
@@ -88,8 +88,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setHeader(HttpHeaders.SET_COOKIE, setCookieValue);
         System.out.println("[LoginFilter] Set-Cookie: " + setCookieValue);
 
-        // (5) 로그인 성공
-        response.setStatus(HttpServletResponse.SC_OK);
+        // (5) redirect 파라미터 확인 및 리다이렉트
+        String redirectUrl = request.getParameter("redirect");
+        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+            response.sendRedirect(redirectUrl);
+        } else {
+            response.sendRedirect("/interview-mode");
+        }
     }
 
     @Override

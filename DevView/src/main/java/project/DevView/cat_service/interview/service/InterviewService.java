@@ -32,7 +32,7 @@ public class InterviewService {
     /**
      * 새 인터뷰 시작
      */
-    public SingleResult<InterviewResponseDto> createInterview(int userId,
+    public SingleResult<InterviewResponseDto> createInterview(Long userId,
                                                               InterviewCreateRequestDto req) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_EXIST));
@@ -49,7 +49,7 @@ public class InterviewService {
     /**
      * 분야별 과거 인터뷰 목록 조회
      */
-    public ListResult<InterviewResponseDto> findByUserAndField(int userId,
+    public ListResult<InterviewResponseDto> findByUserAndField(Long userId,
                                                                String fieldName) {
         Field field = fieldService.getFieldEntityByName(fieldName);
         List<Interview> list = interviewRepository.findByUserIdAndField(userId, field);
@@ -63,11 +63,11 @@ public class InterviewService {
      * 인터뷰 상세 조회
      */
     public SingleResult<InterviewResponseDto> getInterviewDetail(Long interviewId,
-                                                                 int userId) {
+                                                                 Long userId) {
         Interview iv = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_EXIST));
-        // primitive int 비교
-        if (iv.getUser().getId() != userId) {
+        // Long 타입 비교
+        if (!iv.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
         return ResponseService.getSingleResult(InterviewResponseDto.of(iv));
@@ -77,10 +77,10 @@ public class InterviewService {
      * 인터뷰 종료
      */
     public SingleResult<String> finishInterview(Long interviewId,
-                                                int userId) {
+                                                Long userId) {
         Interview iv = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INTERVIEW_NOT_EXIST));
-        if (iv.getUser().getId() != userId) {
+        if (!iv.getUser().getId().equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
         iv.setEndedAt(LocalDateTime.now());
