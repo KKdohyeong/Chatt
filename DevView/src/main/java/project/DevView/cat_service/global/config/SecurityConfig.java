@@ -50,13 +50,16 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",        // 개발 환경
+            "http://devview.site",          // 프로덕션 HTTP
+            "https://devview.site",         // 프로덕션 HTTPS
             "http://13.239.22.1:8000",      // 실제 서비스 IP (HTTP + 포트)
             "https://13.239.22.1:8000",     // 실제 서비스 IP (HTTPS + 포트)
             "http://13.239.22.1",           // 포트 없는 버전도 허용
             "https://13.239.22.1"           // 포트 없는 버전도 허용
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));  // 쿠키 헤더 노출
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -95,7 +98,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
-                                "/webjars/**").permitAll()
+                                "/webjars/**",
+                                "/home/health/").permitAll()
                         .requestMatchers("/login", "/joinPage").anonymous()
                         .requestMatchers("/interview-mode").permitAll()
                         .anyRequest().authenticated());
