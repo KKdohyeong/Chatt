@@ -105,6 +105,19 @@ public class InterviewFlowController {
         return SuccessResponse.ok(ResponseService.getListResult(messageDtos));
     }
 
+    @GetMapping("/{interviewId}/evaluation")
+    @Operation(
+        summary = "인터뷰 메시지 평가",
+        description = "지금까지의 질문과 답변을 바탕으로 AI가 지원자를 평가합니다."
+    )
+    public SuccessResponse<SingleResult<String>> evaluateMessages(
+            @Parameter(description = "인터뷰 ID", example = "1")
+            @PathVariable Long interviewId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        String evaluation = flow.evaluateMessages(interviewId);
+        return SuccessResponse.ok(ResponseService.getSingleResult(evaluation));
+    }
+
     @PostMapping("/{interviewId}/finishQuestion")
     @Operation(
         summary = "현재 질문 종료",

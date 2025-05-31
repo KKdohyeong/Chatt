@@ -2,11 +2,8 @@ package project.DevView.cat_service.interview.repository;
 
 import project.DevView.cat_service.interview.entity.InterviewMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * InterviewMessageRepository
@@ -19,14 +16,4 @@ public interface InterviewMessageRepository extends JpaRepository<InterviewMessa
      *    createdAt 오름차순으로 조회 (대화 순서대로 표시 용도)
      */
     List<InterviewMessage> findByInterview_IdOrderByCreatedAtAsc(Long interviewId);
-
-    @Query(value = """
-        SELECT *
-          FROM interview_message m
-         WHERE m.interview_id = :interviewId
-           AND m.message_type = 'QUESTION'
-         ORDER BY m.created_at DESC
-         LIMIT 1
-    """, nativeQuery = true)
-    Optional<InterviewMessage> findLastQuestionMessage(@Param("interviewId") Long interviewId);
 }
