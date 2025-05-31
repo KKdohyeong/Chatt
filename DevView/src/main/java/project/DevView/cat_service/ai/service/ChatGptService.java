@@ -48,6 +48,33 @@ public class ChatGptService {
         }
     }
 
+    public String getCompletion(String prompt) {
+        ChatMessage systemMsg = new ChatMessage("system", 
+            "당신은 컴퓨터공학 기술 면접관입니다. 주어진 대화 내용을 바탕으로 지원자를 평가해주세요.");
+        ChatMessage userMsg = new ChatMessage("user", prompt);
+
+        ChatRequest requestBody = new ChatRequest(
+            model,
+            new ChatMessage[]{systemMsg, userMsg},
+            2000,  // 충분한 토큰 수 확보
+            0.7    // 적절한 창의성
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiApiKey);
+
+        HttpEntity<ChatRequest> entity = new HttpEntity<>(requestBody, headers);
+        String url = "https://api.openai.com/v1/chat/completions";
+        ChatResponse response = restTemplate.postForObject(url, entity, ChatResponse.class);
+
+        if (response != null && response.choices() != null && response.choices().length > 0) {
+            return response.choices()[0].message().content().trim();
+        } else {
+            throw new RuntimeException("AI 평가 생성에 실패했습니다.");
+        }
+    }
+
     // DTO 클래스들
     record ChatRequest(
         String model,

@@ -47,17 +47,20 @@ public interface UserQuestionHistoryRepository extends JpaRepository<UserQuestio
     List<UserQuestionHistory> findAllCompletedByUserIdAndField(@Param("userId") Long userId, @Param("fieldName") String fieldName);
 
     /**
-     * 특정 userId & questionId에 대해 completed=true로 업데이트 (꼬리질문 종료 시점 등)
-     *
-     * @Modifying + @Query => UPDATE 쿼리를 실행할 수 있음.
+     * 특정 userId & questionId에 대해 새로운 UserQuestionHistory 생성
+     * 
+     * @Modifying + @Query => INSERT 쿼리를 실행할 수 있음.
      */
     @Modifying
-    @Query("""
-        UPDATE UserQuestionHistory h
-        SET h.completed = true, h.answeredAt = CURRENT_TIMESTAMP
-        WHERE h.user.id = :userId
-          AND h.question.id = :questionId
-    """)
+    @Query(value = """
+        INSERT INTO user_question_history (user_id, question_id, answered_at, completed, created_at, updated_at)
+        SELECT :userId, :questionId, CURRENT_TIMESTAMP, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+        WHERE NOT EXISTS (
+            SELECT 1 FROM user_question_history h
+            WHERE h.user_id = :userId
+              AND h.question_id = :questionId
+        )
+    """, nativeQuery = true)
     void markQuestionCompleted(@Param("userId") Long userId,
                               @Param("questionId") Long questionId);
 }

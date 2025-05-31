@@ -55,5 +55,10 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             @Param("usedIds") List<Long> usedIds
     );
 
+    /**
+     * 질문 내용으로 질문 찾기
+     */
+    @Query("SELECT q FROM Question q WHERE q.content = :content")
+    Optional<Question> findByContent(@Param("content") String content);
 
 }
