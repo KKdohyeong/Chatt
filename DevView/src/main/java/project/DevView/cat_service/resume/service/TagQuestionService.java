@@ -17,6 +17,7 @@ public class TagQuestionService {
 
     private final ResumeTagRepository resumeTagRepository;
     private final TagQuestionRepository tagQuestionRepository;
+    private final ResumeMessageService resumeMessageService;
 
     @Transactional
     public TagQuestionResponse.QuestionItem getNextQuestion(Long resumeId) {
@@ -54,6 +55,9 @@ public class TagQuestionService {
                 selectedTag.setAskedAll(true);
             }
         }
+
+        // 6. 질문을 ResumeMessage에도 저장
+        resumeMessageService.saveQuestion(resumeId, selectedQuestion.getCreatedQuestion());
 
         return TagQuestionResponse.QuestionItem.builder()
             .id(selectedQuestion.getId())

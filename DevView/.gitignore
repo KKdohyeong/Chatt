@@ -230,7 +230,7 @@ docker-compose.override.yml
 *.key
 
 # 환경 변수 파일(비밀번호, 토큰 등)
-.env
+.prodenv
 *.env
 
 # (선택) Spring Boot secrets

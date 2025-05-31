@@ -13,7 +13,6 @@ public class InterviewMessageMapper {
                 .sender("AI")
                 .messageType("QUESTION")
                 .content(question.getContent())
-                .question(question)
                 .build();
     }
 

@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
 import project.DevView.cat_service.global.entity.TimeStamp;
-import project.DevView.cat_service.question.entity.Question;
 
 @Entity
 @Table(name = "interview_message")
@@ -31,22 +30,16 @@ public class InterviewMessage extends TimeStamp {
     @Column(nullable = false, length = 3600)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id")
-    private Question question;
-
     @Builder
     public InterviewMessage(Long id,
                             Interview interview,
                             String sender,
                             String messageType,
-                            String content,
-                            Question question) {
+                            String content) {
         this.id = id;
         this.interview = interview;
         this.sender = sender;
         this.messageType = messageType;
         this.content = content;
-        this.question = question;
     }
 }
