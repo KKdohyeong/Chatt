@@ -85,20 +85,22 @@ public class ResumeController {
         return SuccessResponse.ok(ResponseService.getSingleResult(null));
     }
 
-    @PostMapping("/{resumeId}/follow-up")
+    @PostMapping("/{resumeId}/tag-questions/{tagQuestionId}/follow-ups")
     @Operation(
-        summary = "이력서 기반 꼬리 질문 생성",
-        description = "이력서 내용을 기반으로 답변에 대한 꼬리 질문을 생성하고 저장합니다. 답변도 함께 저장됩니다."
+        summary = "이력서 + 태그 질문 기반 꼬리 질문 생성",
+        description = "이력서 내용과 태그 질문을 기반으로 답변에 대한 꼬리 질문을 생성하고 저장합니다. 답변도 함께 저장됩니다."
     )
     public SuccessResponse<SingleResult<String>> createFollowUpQuestion(
             @Parameter(description = "이력서 ID", example = "1")
             @PathVariable Long resumeId,
+            @Parameter(description = "태그 질문 ID", example = "1")
+            @PathVariable Long tagQuestionId,
             @Parameter(description = "답변 내용 (content 또는 answer 키 사용 가능)", example = "{\"content\": \"저는 Java와 Spring을 주로 사용하여 백엔드 개발을 하고 있습니다.\"}")
             @RequestBody Map<String, String> body,
             @Parameter(description = "인증된 사용자 정보")
             @AuthenticationPrincipal CustomUserDetails user) {
         
-        log.debug("꼬리 질문 생성 요청 - resumeId: {}, body: {}", resumeId, body);
+        log.debug("꼬리 질문 생성 요청 - resumeId: {}, tagQuestionId: {}, body: {}", resumeId, tagQuestionId, body);
         
         // content 또는 answer 키에서 답변 내용을 가져옴
         String answer = body.get("content");
@@ -107,12 +109,12 @@ public class ResumeController {
         }
         
         if (answer == null || answer.trim().isEmpty()) {
-            log.error("답변 내용이 비어있습니다. - resumeId: {}, body: {}", resumeId, body);
+            log.error("답변 내용이 비어있습니다. - resumeId: {}, tagQuestionId: {}, body: {}", resumeId, tagQuestionId, body);
             throw new IllegalArgumentException("답변 내용은 필수입니다. (content 또는 answer 키 사용)");
         }
         
-        String followUpQuestion = resumeService.createFollowUpQuestion(resumeId, answer);
-        log.debug("꼬리 질문 생성 완료 - resumeId: {}, followUpQuestion: {}", resumeId, followUpQuestion);
+        String followUpQuestion = resumeService.createFollowUpQuestion(resumeId, tagQuestionId, answer);
+        log.debug("꼬리 질문 생성 완료 - resumeId: {}, tagQuestionId: {}, followUpQuestion: {}", resumeId, tagQuestionId, followUpQuestion);
         
         return SuccessResponse.ok(ResponseService.getSingleResult(followUpQuestion));
     }

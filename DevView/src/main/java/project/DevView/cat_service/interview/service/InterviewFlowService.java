@@ -117,12 +117,6 @@ public class InterviewFlowService {
         // 대신 인터뷰 종료 시점에 모든 질문을 완료 처리하는 방식으로 변경할 수 있습니다.
     }
 
-    public String createFollowUpQuestionForResume(String resumeContent, String answer) {
-        // 이력서 내용을 컨텍스트로 사용하여 꼬리 질문 생성
-        String context = "이력서 내용:\n" + resumeContent;
-        return chatGptService.generateFollowUpQuestion(context, answer);
-    }
-
     @Transactional(readOnly = true)
     public String evaluateMessages(Long interviewId) {
         // 1. 메시지 조회

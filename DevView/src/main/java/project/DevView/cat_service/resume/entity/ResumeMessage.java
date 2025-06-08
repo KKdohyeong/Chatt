@@ -22,15 +22,21 @@ public class ResumeMessage extends TimeStamp {
     @Column(nullable = false, length = 20)
     private MessageType type;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tag_question_id")
+    private TagQuestion tagQuestion;
+
     @Column(nullable = false, length = 1000)
     private String content;
 
     @Builder
     public ResumeMessage(Resume resume,
                         MessageType type,
+                        TagQuestion tagQuestion,
                         String content) {
         this.resume = resume;
         this.type = type;
+        this.tagQuestion = tagQuestion;
         this.content = content;
     }
 

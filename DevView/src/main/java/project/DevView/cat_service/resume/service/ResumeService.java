@@ -1,6 +1,8 @@
 package project.DevView.cat_service.resume.service;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import project.DevView.cat_service.resume.dto.ResumeRequest;
@@ -13,6 +15,7 @@ import project.DevView.cat_service.user.repository.UserRepository;
 import project.DevView.cat_service.interview.service.InterviewFlowService;
 import project.DevView.cat_service.resume.service.ResumeMessageService;
 import project.DevView.cat_service.ai.service.ChatGptService;
+import project.DevView.cat_service.ai.service.ResumeAIService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,11 +24,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResumeService {
 
+    private static final Logger log = LoggerFactory.getLogger(ResumeService.class);
+
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final InterviewFlowService interviewFlowService;
     private final ResumeMessageService resumeMessageService;
     private final ChatGptService chatGptService;
+    private final ResumeAIService resumeAIService;
 
     @Transactional
     public ResumeResponse createResume(Long userId, ResumeRequest request) {
@@ -80,64 +86,78 @@ public class ResumeService {
     }
 
     @Transactional
-    public String createFollowUpQuestion(Long resumeId, String answer) {
-        Resume resume = resumeRepository.findById(resumeId)
-            .orElseThrow(() -> new IllegalArgumentException("Resume not found"));
+    public String createFollowUpQuestion(Long resumeId, Long tagQuestionId, String answer) {
+        log.info("[꼬리질문 생성 시작] resumeId: {}, tagQuestionId: {}, 마지막 답변: {}", resumeId, tagQuestionId, answer);
         
-        // 1. 먼저 사용자의 답변을 저장
-        resumeMessageService.saveAnswer(resumeId, answer);
+        // 1. 사용자의 답변을 저장
+        resumeMessageService.saveAnswer(resumeId, tagQuestionId, answer);
         
-        // 2. AI를 통해 꼬리 질문 생성
-        String followUpQuestion = interviewFlowService.createFollowUpQuestionForResume(resume.getContent(), answer);
+        // 2. 태그 질문의 이전 대화 내용 조회
+        List<ResumeMessage> messages = resumeMessageService.getMessagesByTagQuestion(resumeId, tagQuestionId);
+        log.info("[이전 대화 내용 조회] 총 {}개의 메시지 조회됨", messages.size());
         
-        // 3. 생성된 꼬리 질문을 저장
-        resumeMessageService.saveQuestion(resumeId, followUpQuestion);
-        
-        // 4. 생성된 꼬리 질문 반환
-        return followUpQuestion;
-    }
-
-    @Transactional(readOnly = true)
-    public List<ResumeMessage> getMessages(Long resumeId) {
-        return resumeMessageService.getMessages(resumeId);
-    }
-
-    @Transactional(readOnly = true)
-    public String evaluateMessages(Long resumeId) {
-        // 1. 메시지 조회
-        List<ResumeMessage> messages = resumeMessageService.getMessages(resumeId);
-        
-        // 2. 채팅 히스토리 형식으로 변환
+        // 3. 채팅 히스토리 형식으로 변환
         String chatHistory = messages.stream()
             .map(message -> String.format("%s : %s", 
                 message.getType() == ResumeMessage.MessageType.QUESTION ? "질문" : "답변",
                 message.getContent()))
             .collect(Collectors.joining("\n"));
+        log.info("[채팅 히스토리]\n{}", chatHistory);
 
-        // 3. AI 평가 프롬프트 생성
+        // 4. AI 꼬리 질문 생성 프롬프트
         String prompt = String.format("""
-            당신은 자기소개서 기반의 프로젝트 경험 면접을 진행한 기술 면접관입니다. 아래는 지금까지의 질문, 답변 결과입니다.
-           
+            당신은 개발자 기술 면접관입니다. 아래는 지금까지의 질문과 답변 내용입니다:
+            
             %s
-            이 데이터를 바탕으로, 이 지원자에 대한 종합 평가를 작성하세요. \s
-            다음 기준에 따라 이 답변을 1~5점으로 평가하고, 각 항목별로 간단한 이유를 작성하세요:
+            
+            마지막 답변: %s
+            
+            위 대화 맥락을 바탕으로, 마지막 답변에 대한 심층적인 꼬리 질문을 생성해주세요.
+            다음 원칙을 따라주세요:
+            1. 이전 질문과 답변의 맥락을 유지하면서 더 깊이 있는 질문을 해주세요.
+            2. 답변에서 언급된 구체적인 기술이나 경험에 대해 더 자세히 물어보세요.
+            3. 답변에서 불명확하거나 추가 설명이 필요한 부분을 짚어주세요.
+            4. 답변자의 역량을 더 정확히 파악할 수 있는 질문을 해주세요.
+            
+            질문만 생성해주세요. 한국어로 답변해주고 자연스러운 어휘를 구사해주세요.
+            """, chatHistory, answer);
+        log.info("[AI 프롬프트]\n{}", prompt);
 
-            1. 질문의 의도 파악 : 질문의 핵심을 정확히 이해하고 맞춤형으로 답했는가? \s
-            2. 답변의 구체성 : 개념이 아닌 실제 경험과 수치를 들어 상세히 설명했는가? \s
-            3. 사유와 결과의 일관성 : 문제의 원인, 대응, 결과의 흐름이 일관적인가? \s
-            4. 예외 상황에 대한 대응성 : 예상치 못한 상황에 대한 설명이나 대응책이 포함되었는가? \s
-            5. 답변/설명의 논리적 구성 : 말의 순서, 구성, 전개 방식이 논리적인가?
-            4. 답변의 간결성 : 응답 길이가 말하기 기준 1분 이내로 적절한가?
-            ---
-            또한 아래 항목을 포함해야 합니다:
-            1. 총점 (100점 만점) – 항목별 평균 점수 기반 \s
-            2. 강점 – 어떤 역량이나 자세가 특히 뛰어났는가? \s
-            3. 개선점 – 반복적으로 아쉬웠던 부분은 무엇인가? \s
-            4. 추천 준비 방향 – 다음 면접을 위한 구체적인 조언 \s
-            5. 답변 스타일 및 태도 관련 종합 피드백 – 커뮤니케이션 및 태도 중심 피드백
-            """, chatHistory);
+        // 5. AI를 통해 꼬리 질문 생성
+        String followUpQuestion = chatGptService.getCompletion(prompt);
+        log.info("[생성된 꼬리질문] {}", followUpQuestion);
+        
+        // 6. 생성된 꼬리 질문을 저장
+        resumeMessageService.saveQuestion(resumeId, tagQuestionId, followUpQuestion);
+        
+        // 7. 생성된 꼬리 질문 반환
+        log.info("[꼬리질문 생성 완료] resumeId: {}, tagQuestionId: {}", resumeId, tagQuestionId);
+        return followUpQuestion;
+    }
 
-        // 4. AI 평가 요청
-        return chatGptService.getCompletion(prompt);
+    @Transactional(readOnly = true)
+    public List<ResumeMessage> getMessages(Long resumeId) {
+        return resumeMessageService.getAllMessages(resumeId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResumeMessage> getMessagesByTagQuestion(Long resumeId, Long tagQuestionId) {
+        return resumeMessageService.getMessagesByTagQuestion(resumeId, tagQuestionId);
+    }
+
+    @Transactional(readOnly = true)
+    public String evaluateMessages(Long resumeId) {
+        // 1. 대화 기록 조회
+        List<ResumeMessage> messages = resumeMessageService.getAllMessages(resumeId);
+        
+        // 2. 대화 기록을 문자열로 변환
+        String chatHistory = messages.stream()
+            .map(message -> String.format("%s : %s", 
+                message.getType() == ResumeMessage.MessageType.QUESTION ? "면접관" : "지원자",
+                message.getContent()))
+            .collect(Collectors.joining("\n\n"));
+
+        // 3. AI 평가 생성
+        return chatGptService.evaluateAnswer(chatHistory);
     }
 } 
