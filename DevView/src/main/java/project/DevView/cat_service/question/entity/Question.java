@@ -17,23 +17,24 @@ public class Question extends TimeStamp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "question_field",
-            joinColumns = @JoinColumn(name = "question_id"),
-            inverseJoinColumns = @JoinColumn(name = "field_id")
-    )
-    private Set<Field> fields = new HashSet<>();
+    @Enumerated(EnumType.STRING)
+    private Field field;
 
     @Column(length = 3600, nullable = false)
-    private String content;
+    private String question;
+
+    @Column(length = 5000, nullable = false)
+    private String answer;
+
 
     @Builder
     public Question(Long id,
-                    Set<Field> fields,
-                    String content) {
+                    Field field,
+                    String question,
+                    String answer) {
         this.id = id;
-        this.fields = fields;
-        this.content = content;
+        this.field = field;
+        this.question = question;
+        this.answer = answer;
     }
 }

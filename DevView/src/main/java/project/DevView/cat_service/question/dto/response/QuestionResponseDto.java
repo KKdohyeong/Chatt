@@ -3,11 +3,7 @@ package project.DevView.cat_service.question.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import project.DevView.cat_service.question.entity.Field;
 import project.DevView.cat_service.question.entity.Question;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Builder
 public record QuestionResponseDto(
@@ -17,20 +13,22 @@ public record QuestionResponseDto(
 
         @NotNull
         @Schema(description = "질문 내용", example = "인터뷰 질문 예시입니다")
-        String content,
+        String question,
 
         @NotNull
-        @Schema(description = "연결된 Field 이름 목록", example = "[\"OS\",\"DB\"]")
-        List<String> fields
+        @Schema(description = "질문 내용", example = "인터뷰 질문 예시입니다")
+        String answer,
+
+        @NotNull
+        @Schema(description = "연결된 Field 이름", example = "OS")
+        String field
 ) {
     public static QuestionResponseDto of(Question question) {
         return QuestionResponseDto.builder()
                 .questionId(question.getId())
-                .content(question.getContent())
-                .fields(question.getFields()
-                        .stream()
-                        .map(Field::getName)
-                        .collect(Collectors.toList()))
+                .question(question.getQuestion())
+                .answer(question.getAnswer())
+                .field(question.getField().toString())
                 .build();
     }
 }

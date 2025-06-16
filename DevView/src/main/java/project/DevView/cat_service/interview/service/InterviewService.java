@@ -10,13 +10,10 @@ import project.DevView.cat_service.global.dto.response.result.SingleResult;
 import project.DevView.cat_service.interview.dto.request.InterviewCreateRequestDto;
 import project.DevView.cat_service.interview.dto.response.InterviewResponseDto;
 import project.DevView.cat_service.interview.entity.Interview;
-import project.DevView.cat_service.interview.entity.InterviewMessage;
 import project.DevView.cat_service.interview.mapper.InterviewMapper;
 import project.DevView.cat_service.interview.repository.InterviewMessageRepository;
 import project.DevView.cat_service.interview.repository.InterviewRepository;
 import project.DevView.cat_service.question.entity.Field;
-import project.DevView.cat_service.question.entity.Question;
-import project.DevView.cat_service.question.service.FieldService;
 import project.DevView.cat_service.question.repository.QuestionRepository;
 import project.DevView.cat_service.user.entity.UserEntity;
 import project.DevView.cat_service.user.repository.UserRepository;
@@ -32,7 +29,6 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final UserRepository userRepository;
-    private final FieldService fieldService;
     private final InterviewMessageRepository messageRepository;
     private final UserQuestionHistoryRepository historyRepository;
     private final QuestionRepository questionRepository;
@@ -45,9 +41,9 @@ public class InterviewService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_EXIST));
 
-        Field field = fieldService.getFieldEntityByName(req.field());
+        Field field = Field.fromName(req.field());
 
-        Interview iv = InterviewMapper.from(req, user, field);
+        Interview iv = InterviewMapper.from(req, user);
         iv.setStartedAt(LocalDateTime.now());
         Interview saved = interviewRepository.save(iv);
 
@@ -59,7 +55,7 @@ public class InterviewService {
      */
     public ListResult<InterviewResponseDto> findByUserAndField(Long userId,
                                                                String fieldName) {
-        Field field = fieldService.getFieldEntityByName(fieldName);
+        Field field = Field.fromName(fieldName);
         List<Interview> list = interviewRepository.findByUserIdAndField(userId, field);
         List<InterviewResponseDto> dtos = list.stream()
                 .map(InterviewResponseDto::of)

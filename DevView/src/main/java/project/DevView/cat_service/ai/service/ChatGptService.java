@@ -124,6 +124,53 @@ public class ChatGptService {
     }
 
     /**
+     * CS 기술 면접 답변을 평가하는 메서드
+     * @param chatHistory 대화 기록 (질문과 답변)
+     * @return 평가 결과
+     */
+    public String evaluateCSAnswer(String chatHistory) {
+        ChatMessage systemMsg = new ChatMessage("system", 
+            "당신은 컴퓨터공학 기술 면접관입니다. 아래는 지금까지의 질문, 답변 결과입니다.\n\n" +
+            "이 데이터를 바탕으로, 이 지원자에 대한 종합 평가를 작성하세요.\n" +
+            "다음 기준에 따라 이 답변을 1~5점으로 평가하고, 각 항목별로 간단한 이유를 작성하세요:\n\n" +
+            "1. 정확성 : 기술한 내용이 사실과 부합하는가? 핵심 개념을 정확히 설명했는가?\n" +
+            "2. 완전성 : 질문에 요구되는 설명이 충분한가? 중요한 개념이 빠지지 않았는가?\n" +
+            "3. 표현력 : 명확하고 이해하기 쉽게 설명했는가? 용어 사용이 적절한가?\n" +
+            "4. 간결성 : 응답 길이가 말하기 기준 1분 이내로 적절한가?\n\n" +
+            "---\n" +
+            "또한 아래 항목을 포함해야 합니다:\n\n" +
+            "1. 총점 (100점 만점) – 항목별 평균 점수 기반\n" +
+            "2. 강점 – 어떤 역량이나 자세가 특히 뛰어났는가?\n" +
+            "3. 개선점 – 반복적으로 아쉬웠던 부분은 무엇인가?\n" +
+            "4. 추천 준비 방향 – 다음 면접을 위한 구체적인 조언\n" +
+            "5. 답변 스타일 및 태도 관련 종합 피드백 – 커뮤니케이션 및 태도 중심 피드백");
+        
+        ChatMessage userMsg = new ChatMessage("user", 
+            "다음은 CS 기술 면접 대화 기록입니다. 위 기준에 따라 평가해주세요:\n\n" + chatHistory);
+
+        ChatRequest requestBody = new ChatRequest(
+            model,
+            new ChatMessage[]{systemMsg, userMsg},
+            2000,  // 평가는 좀 더 긴 응답이 필요
+            0.7    // 적절한 창의성
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiApiKey);
+
+        HttpEntity<ChatRequest> entity = new HttpEntity<>(requestBody, headers);
+        String url = "https://api.openai.com/v1/chat/completions";
+        ChatResponse response = restTemplate.postForObject(url, entity, ChatResponse.class);
+
+        if (response != null && response.choices() != null && response.choices().length > 0) {
+            return response.choices()[0].message().content().trim();
+        } else {
+            throw new RuntimeException("AI CS 답변 평가 생성에 실패했습니다.");
+        }
+    }
+
+    /**
      * 건너뛰기 후 다음 질문을 가다듬는 메서드
      * @param originalQuestion 원래 질문
      * @return 가다듬어진 질문

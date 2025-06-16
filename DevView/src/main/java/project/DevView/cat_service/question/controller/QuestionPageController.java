@@ -1,7 +1,6 @@
 package project.DevView.cat_service.question.controller;
 
-import project.DevView.cat_service.question.entity.Field;
-import project.DevView.cat_service.question.service.FieldService;
+
 import project.DevView.cat_service.question.service.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,19 +20,14 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 public class QuestionPageController {
 
-    private final FieldService fieldService;
     private final QuestionService questionService;
 
     /**
      * 1) Question 생성 폼 (SSR)
      *    GET /admin/questions/new
+     -> 크롤링으로 인한 api 삭제
      */
-    @GetMapping("/new")
-    public String newQuestionPage(Model model) {
-        List<Field> allFields = fieldService.getAllFieldEntities();
-        model.addAttribute("allFields", allFields);
-        return "newQuestion";
-    }
+
     
     /**
      * 2) 모든 질문 목록 조회 (SSR)

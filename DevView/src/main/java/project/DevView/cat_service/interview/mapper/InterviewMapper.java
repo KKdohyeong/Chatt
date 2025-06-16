@@ -11,11 +11,10 @@ public class InterviewMapper {
 
     /** Request + User + Field → Interview 엔티티 */
     public static Interview from(InterviewCreateRequestDto req,
-                                 UserEntity user,
-                                 Field field) {
+                                 UserEntity user) {
         return Interview.builder()
                 .user(user)
-                .field(field)
+                .field(Field.fromName(req.field()))
                 .startedAt(LocalDateTime.now())
                 .build();
     }
