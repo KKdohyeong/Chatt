@@ -22,9 +22,9 @@ public class ChatGptService {
 
     public String generateFollowUpQuestion(String conversationContext, String userAnswer) {
         ChatMessage systemMsg = new ChatMessage("system",
-                "You are a helpful assistant. The conversation so far:\n" + conversationContext);
+                "당신은 기술면접관입니다. 답변을 보고 꼬리 질문을 생성하세요. 구어체로 답변해주세요.:\n" + conversationContext);
         ChatMessage userMsg = new ChatMessage("user",
-                "User answer: " + userAnswer + "\nNow create a follow-up question for the user.");
+                "사용자 답변: " + userAnswer + "\n");
 
         ChatRequest requestBody = new ChatRequest(
                 model,
