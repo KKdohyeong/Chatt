@@ -4,8 +4,9 @@ import java.util.List;
 
 public record QuestionWithStatusDto(
     Long id,
-    String content,
-    List<String> fields,
+    String question,
+    String answer,
+    String field,
     boolean answered
 ) {
 } 

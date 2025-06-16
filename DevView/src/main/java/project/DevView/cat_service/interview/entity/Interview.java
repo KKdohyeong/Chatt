@@ -25,8 +25,6 @@ public class Interview extends TimeStamp {
     @JoinColumn(name = "user_id")
     private UserEntity user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "field_id")
     private Field field;
 
     private LocalDateTime startedAt;

@@ -31,7 +31,7 @@ public record InterviewResponseDto(
         return InterviewResponseDto.builder()
                 .interviewId(interview.getId())
                 .userId(interview.getUser().getId())
-                .fieldName(interview.getField().getName())
+                .fieldName(interview.getField().toString())
                 .startedAt(interview.getStartedAt())
                 .endedAt(interview.getEndedAt())
                 .build();

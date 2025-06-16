@@ -64,7 +64,7 @@ public class InterviewFlowController {
         flow.createQuestionMessage(interviewId, next);
         Map<String, Object> result = Map.of(
             "questionId", next.getId(),
-            "content", next.getContent()
+            "content", next.getQuestion()
         );
         return SuccessResponse.ok(ResponseService.getSingleResult(result));
     }

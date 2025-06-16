@@ -11,16 +11,15 @@ import project.DevView.cat_service.interview.dto.request.InterviewCreateRequestD
 import project.DevView.cat_service.interview.dto.response.InterviewResponseDto;
 import project.DevView.cat_service.interview.service.InterviewService;
 import project.DevView.cat_service.question.entity.Field;
-import project.DevView.cat_service.question.service.FieldService;
 import project.DevView.cat_service.user.dto.CustomUserDetails;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
 public class InterviewPageController {
 
-    private final FieldService   fieldService;
     private final InterviewService interviewService;   // 인터뷰 생성 전담
 
     /* ──────────────────────────────────
@@ -56,7 +55,7 @@ public class InterviewPageController {
         Long interviewId = created.interviewId();  // record의 accessor 메서드 사용
 
         /* 3-2) 공통 모델 설정 */
-        List<Field> fields = fieldService.getAllFieldEntities();
+        List<String> fields = Arrays.stream(Field.values()).map(Enum::name).toList();
         model.addAttribute("fields", fields);
         model.addAttribute("resumeId", resumeId);
         model.addAttribute("interviewId", interviewId);
@@ -69,7 +68,7 @@ public class InterviewPageController {
      * ────────────────────────────────── */
     @GetMapping("/interview")
     public String showInterviewPage(Model model) {
-        List<Field> fields = fieldService.getAllFieldEntities();
+        List<String> fields = Arrays.stream(Field.values()).map(Enum::name).toList();
         model.addAttribute("fields", fields);
         return "interviewPage";
     }

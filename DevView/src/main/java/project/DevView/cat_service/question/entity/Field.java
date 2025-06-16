@@ -1,26 +1,33 @@
 package project.DevView.cat_service.question.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import project.DevView.cat_service.global.entity.TimeStamp;
+import lombok.Data;
+import lombok.Getter;
 
-@Entity
-@Table(name = "field")
-@Getter @Setter
-@NoArgsConstructor
-public class Field extends TimeStamp {
+@Getter
+public enum Field {
+    OS(1), DATABASE(2), NETWORK(3), JAVA(4),
+    ALGORITHM(5), DATASTRUCTURE(6), SW(7), WEB(8);
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private final int value;
 
-    @Column(nullable = false, length = 100)
-    private String name;
+    Field(int value) {
+        this.value = value;
+    }
 
-    @Builder
-    public Field(Long id,
-                 String name) {
-        this.id = id;
-        this.name = name;
+    public static Field fromValue(int value) {
+        for (Field field : Field.values()) {
+            if (field.getValue() == value) {
+                return field;
+            }
+        }
+        throw new IllegalArgumentException("Invalid value: " + value);
+    }
+    public static Field fromName(String name) {
+        for (Field field : Field.values()) {
+            if (field.name().equalsIgnoreCase(name)) {
+                return field;
+            }
+        }
+        throw new IllegalArgumentException("Invalid name: " + name);
     }
 }

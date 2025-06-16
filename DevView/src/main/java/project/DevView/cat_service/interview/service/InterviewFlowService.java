@@ -45,8 +45,8 @@ public class InterviewFlowService {
 
         List<Long> used = historyRepository.findAnsweredQuestionIds(userId);
         Optional<Question> q = used.isEmpty()
-                ? questionRepository.findOneWithoutUsedIds(iv.getField().getName())
-                : questionRepository.findOneWithUsedIds(iv.getField().getName(), used);
+                ? questionRepository.findOneWithoutUsedIds(iv.getField().toString())
+                : questionRepository.findOneWithUsedIds(iv.getField().toString(), used);
 
         // 질문을 찾았다면 UserQuestionHistory 생성 및 완료 처리
         q.ifPresent(question -> {
@@ -129,32 +129,8 @@ public class InterviewFlowService {
                 message.getContent()))
             .collect(Collectors.joining("\n"));
 
-        // 3. AI 평가 프롬프트 생성
-        String prompt = String.format("""
-            당신은 컴퓨터공학 기술 면접관입니다. 아래는 지금까지의 질문, 답변 결과입니다.
-
-            %s
-
-            이 데이터를 바탕으로, 이 지원자에 대한 종합 평가를 작성하세요.  
-            다음 기준에 따라 이 답변을 1~5점으로 평가하고, 각 항목별로 간단한 이유를 작성하세요:
-
-            1. 정확성 : 기술한 내용이 사실과 부합하는가? 핵심 개념을 정확히 설명했는가?
-            2. 완전성 : 질문에 요구되는 설명이 충분한가? 중요한 개념이 빠지지 않았는가?
-            3. 표현력 : 명확하고 이해하기 쉽게 설명했는가? 용어 사용이 적절한가?
-            4. 간결성 : 응답 길이가 말하기 기준 1분 이내로 적절한가?
-
-            ---
-            또한 아래 항목을 포함해야 합니다:
-
-            1. 총점 (100점 만점) – 항목별 평균 점수 기반  
-            2. 강점 – 어떤 역량이나 자세가 특히 뛰어났는가?  
-            3. 개선점 – 반복적으로 아쉬웠던 부분은 무엇인가?  
-            4. 추천 준비 방향 – 다음 면접을 위한 구체적인 조언  
-            5. 답변 스타일 및 태도 관련 종합 피드백 – 커뮤니케이션 및 태도 중심 피드백
-            """, chatHistory);
-
-        // 4. AI 평가 요청
-        return chatGptService.getCompletion(prompt);
+        // 3. AI 평가 요청 - CS 전용 evaluateCSAnswer 메서드 사용
+        return chatGptService.evaluateCSAnswer(chatHistory);
     }
 
     /* internal */

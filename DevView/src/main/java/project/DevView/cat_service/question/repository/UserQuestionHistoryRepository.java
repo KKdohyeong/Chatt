@@ -39,9 +39,8 @@ public interface UserQuestionHistoryRepository extends JpaRepository<UserQuestio
         SELECT h
         FROM UserQuestionHistory h
         JOIN h.question q
-        JOIN q.fields f
         WHERE h.user.id = :userId
-          AND f.name = :fieldName
+          AND UPPER(q.field) = UPPER(:fieldName)
           AND h.completed = true
     """)
     List<UserQuestionHistory> findAllCompletedByUserIdAndField(@Param("userId") Long userId, @Param("fieldName") String fieldName);
