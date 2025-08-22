@@ -137,8 +137,8 @@ public class ResumeController {
 
     @GetMapping("/{resumeId}/evaluation")
     @Operation(
-        summary = "이력서 메시지 평가",
-        description = "지금까지의 질문과 답변을 바탕으로 AI가 지원자를 평가합니다."
+        summary = "이력서 기반 면접 평가",
+        description = "이력서 기반 면접의 모든 질문과 답변을 바탕으로 AI가 지원자를 평가합니다."
     )
     public SuccessResponse<SingleResult<String>> evaluateMessages(
             @Parameter(description = "이력서 ID", example = "1")
@@ -147,4 +147,17 @@ public class ResumeController {
         String evaluation = resumeService.evaluateMessages(resumeId);
         return SuccessResponse.ok(ResponseService.getSingleResult(evaluation));
     }
-} 
+
+    @GetMapping("/{resumeId}/completion-status")
+    @Operation(
+        summary = "이력서 질문 완료 상태 확인",
+        description = "해당 이력서의 모든 질문이 완료되었는지 true/false로 반환합니다."
+    )
+    public SuccessResponse<SingleResult<Boolean>> checkAllQuestionsCompleted(
+            @Parameter(description = "이력서 ID", example = "1")
+            @PathVariable Long resumeId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        boolean isCompleted = resumeService.isAllQuestionsCompleted(resumeId);
+        return SuccessResponse.ok(ResponseService.getSingleResult(isCompleted));
+    }
+}

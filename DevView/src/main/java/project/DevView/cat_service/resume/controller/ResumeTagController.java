@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import project.DevView.cat_service.resume.dto.ResumeTagResponse;
 import project.DevView.cat_service.resume.dto.TagQuestionResponse;
 import project.DevView.cat_service.resume.dto.NextQuestionResponse;
+import project.DevView.cat_service.resume.service.ResumeService;
 import project.DevView.cat_service.resume.service.ResumeTagService;
 import project.DevView.cat_service.resume.service.TagQuestionService;
 import project.DevView.cat_service.resume.service.ResumeMessageService;
@@ -25,6 +26,7 @@ public class ResumeTagController {
     private final ResumeTagService resumeTagService;
     private final TagQuestionService tagQuestionService;
     private final ResumeMessageService resumeMessageService;
+    private final ResumeService resumeService;
 
     @PostMapping("/{resumeId}/tags")
     @Operation(
@@ -35,7 +37,7 @@ public class ResumeTagController {
             @Parameter(description = "이력서 ID", example = "1")
             @PathVariable Long resumeId) {
         return SuccessResponse.ok(ResponseService.getSingleResult(
-            resumeTagService.generateTagsAndQuestions(resumeId)));
+                resumeService.generateTagsAndQuestions(resumeId)));
     }
 
     @GetMapping("/{resumeId}/next-question")
@@ -84,4 +86,6 @@ public class ResumeTagController {
         return SuccessResponse.ok(ResponseService.getSingleResult(
             resumeTagService.getTags(resumeId)));
     }
+
+
 } 

@@ -2,6 +2,8 @@ package project.DevView.cat_service.question.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import project.DevView.cat_service.global.dto.response.result.ListResult;
 import project.DevView.cat_service.global.dto.response.result.SingleResult;
 import project.DevView.cat_service.global.service.ResponseService;
@@ -13,6 +15,11 @@ import project.DevView.cat_service.question.entity.Question;
 import project.DevView.cat_service.question.repository.QuestionRepository;
 import project.DevView.cat_service.question.repository.UserQuestionHistoryRepository;
 import project.DevView.cat_service.question.mapper.QuestionMapper;
+import project.DevView.cat_service.resume.dto.TagQuestionResponse;
+import project.DevView.cat_service.resume.entity.ResumeTag;
+import project.DevView.cat_service.resume.entity.TagQuestion;
+import project.DevView.cat_service.resume.repository.ResumeTagRepository;
+import project.DevView.cat_service.resume.repository.TagQuestionRepository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +32,7 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
     private final UserQuestionHistoryRepository historyRepository;
+    private final TagQuestionRepository tagQuestionRepository;
 
     /**
      * 질문 생성 및 Field 연결
@@ -55,7 +63,22 @@ public class QuestionService {
                 
         return ResponseService.getListResult(dtoList);
     }
-    
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveQuestions(ResumeTag tag, TagQuestionResponse resp) {
+        var entities = resp.getQuestions().stream()
+                .map(q -> TagQuestion.builder()
+                        .resumeTag(tag)
+                        .baseQuestion(q.getBaseQuestion())
+                        .createdQuestion(q.getCreatedQuestion())
+                        .isCompleted(false)
+                        .isAsked(false)
+                        .build())
+                .toList();
+        tagQuestionRepository.saveAll(entities);
+    }
+
+
     /**
      * 특정 분야의 모든 질문 조회 (유저의 답변 상태 포함)
      */
