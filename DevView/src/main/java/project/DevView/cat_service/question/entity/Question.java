@@ -26,7 +26,6 @@ public class Question extends TimeStamp {
     @Column(length = 5000, nullable = false)
     private String answer;
 
-
     @Builder
     public Question(Long id,
                     Field field,
@@ -34,6 +33,19 @@ public class Question extends TimeStamp {
                     String answer) {
         this.id = id;
         this.field = field;
+        this.question = question;
+        this.answer = answer;
+    }
+
+    public static Question create(Field field, String question, String answer) {
+        return Question.builder()
+                .field(field)
+                .question(question)
+                .answer(answer)
+                .build();
+    }
+
+    public void update(String question, String answer) {
         this.question = question;
         this.answer = answer;
     }

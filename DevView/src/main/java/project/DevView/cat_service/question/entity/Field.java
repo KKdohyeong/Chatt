@@ -1,6 +1,5 @@
 package project.DevView.cat_service.question.entity;
 
-import lombok.Data;
 import lombok.Getter;
 
 @Getter

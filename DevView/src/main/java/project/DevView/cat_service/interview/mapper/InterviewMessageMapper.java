@@ -16,6 +16,17 @@ public class InterviewMessageMapper {
                 .build();
     }
 
+    public static InterviewMessage questionToMessageWithContent(Interview interview,
+                                                               Question question,
+                                                               String convertedContent) {
+        return InterviewMessage.builder()
+                .interview(interview)
+                .sender("AI")
+                .messageType("QUESTION")
+                .content(convertedContent)
+                .build();
+    }
+
     public static InterviewMessage answerToMessage(Interview interview,
                                                    String userAnswer) {
         return InterviewMessage.builder()

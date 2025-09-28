@@ -61,10 +61,13 @@ public class InterviewFlowController {
             return SuccessResponse.ok(ResponseService.getSingleResult(Map.of("noMore", true)));
         }
 
-        flow.createQuestionMessage(interviewId, next);
+        // COSTAR 형식으로 변환된 질문 내용 가져오기
+        String convertedContent = flow.getConvertedQuestionContent(next);
+        
+        flow.createQuestionMessage(interviewId, next, convertedContent);
         Map<String, Object> result = Map.of(
             "questionId", next.getId(),
-            "content", next.getQuestion()
+            "content", convertedContent  // 변환된 질문 사용
         );
         return SuccessResponse.ok(ResponseService.getSingleResult(result));
     }
@@ -82,6 +85,7 @@ public class InterviewFlowController {
             @AuthenticationPrincipal CustomUserDetails user) {
 
         String ans = body.get("content");
+        System.out.println(ans);
         flow.createAnswerMessage(interviewId, ans);
         var follow = flow.createFollowUpQuestion(interviewId, ans);
         return SuccessResponse.ok(ResponseService.getSingleResult(Map.of("followUp", follow.getContent())));
