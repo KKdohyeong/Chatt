@@ -49,8 +49,31 @@ public class ChatGptService {
     }
 
     public String getCompletion(String prompt) {
-        ChatMessage systemMsg = new ChatMessage("system", 
-            "당신은 개발자 기술 면접관입니다. 주어진 대화 맥락을 바탕으로 하나의 심층적인 꼬리질문만 생성해주세요. 여러 질문을 생성하지 마세요. 한국어로 생성을 하면서 질문은 실제 질문하는것처럼 어휘가 자연스러우면 좋아.");
+        ChatMessage systemMsg = new ChatMessage("system",
+            "Context\n" +
+                    "당신은 개발자 기술 면접관입니다.\n" +
+                    "주어진 대화 맥락(질문·답변 기록)을 바탕으로 후속 질문을 만들어야 합니다.\n" +
+                    "\n" +
+                    "Objective\n" +
+                    "하나의 심층적인 꼬리 질문을 생성한다. (여러 개 X)\n" +
+                    "\n" +
+                    "Style\n" +
+                    "\n" +
+                    "출력 언어: 한국어\n" +
+                    "\n" +
+                    "표현: 실제 면접 현장에서 쓰는 자연스러운 어휘·문장\n" +
+                    "\n" +
+                    "Tone\n" +
+                    "전문적이고 명확하며 간결하게, 한 문장으로 질문한다.\n" +
+                    "\n" +
+                    "Audience\n" +
+                    "개발자 지원자가 우리가 생성한 질문을 듣는다. \n" +
+                    "\n" +
+                    "Response\n" +
+                    "\n" +
+                    "생성된 질문 한 문장을 출력한다.\n" +
+                    "\n" +
+                    "불필요한 설명·머리말·꼬리말은 포함하지 않는다");
         ChatMessage userMsg = new ChatMessage("user", prompt);
 
         ChatRequest requestBody = new ChatRequest(
@@ -93,7 +116,6 @@ public class ChatGptService {
             "3. 사유와 결과의 일관성 : 문제의 원인, 대응, 결과의 흐름이 일관적인가?\n" +
             "4. 예외 상황에 대한 대응성 : 예상치 못한 상황에 대한 설명이나 대응책이 포함되었는가?\n" +
             "5. 답변/설명의 논리적 구성 : 말의 순서, 구성, 전개 방식이 논리적인가?\n" +
-            "6. 답변의 간결성 : 말로 했을 때 1분 이내로 핵심이 정리되어 있는가?\n\n" +
             "---\n" +
             "마지막으로 총점을 계산하세요.\n\n" +
             "총점 (100점 만점) – 위 항목의 평균 점수를 20배하여 계산");
@@ -136,7 +158,6 @@ public class ChatGptService {
             "1. 정확성 : 기술한 내용이 사실과 부합하는가? 핵심 개념을 정확히 설명했는가?\n" +
             "2. 완전성 : 질문에 요구되는 설명이 충분한가? 중요한 개념이 빠지지 않았는가?\n" +
             "3. 표현력 : 명확하고 이해하기 쉽게 설명했는가? 용어 사용이 적절한가?\n" +
-            "4. 간결성 : 응답 길이가 말하기 기준 1분 이내로 적절한가?\n\n" +
             "---\n" +
             "또한 아래 항목을 포함해야 합니다:\n\n" +
             "1. 총점 (100점 만점) – 항목별 평균 점수 기반\n" +
@@ -191,6 +212,48 @@ public class ChatGptService {
             new ChatMessage[]{systemMsg, userMsg},
             500,  // 짧은 응답이므로 500 토큰으로 충분
             0.7
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiApiKey);
+
+        HttpEntity<ChatRequest> entity = new HttpEntity<>(requestBody, headers);
+        String url = "https://api.openai.com/v1/chat/completions";
+        ChatResponse response = restTemplate.postForObject(url, entity, ChatResponse.class);
+
+        if (response != null && response.choices() != null && response.choices().length > 0) {
+            return response.choices()[0].message().content().trim();
+        } else {
+            // 실패 시 원래 질문 반환
+            return originalQuestion;
+        }
+    }
+
+    /**
+     * 질문을 COSTAR 형식으로 사람의 어휘로 변환하는 메서드
+     * @param originalQuestion 원래 질문
+     * @return 변환된 질문
+     */
+    public String convertQuestionToCostarFormat(String originalQuestion) {
+        ChatMessage systemMsg = new ChatMessage("system", 
+            "당신은 개발자 기술 면접관입니다. 주어진 질문을 사람의 어휘로 자연스럽게 변환해주세요.\n\n" +
+            "변환 원칙:\n" +
+            "1. 기술적 용어는 유지하되, 자연스러운 대화체로 변환\n" +
+            "2. 실제 면접에서 사용할 수 있는 친근하면서도 전문적인 어투\n" +
+            "3. 경험을 묻지 말고 해당 개념에 대한 지식만 물어봐줘\n" +
+            "4. 한 문장으로 자연스럽게 연결\n" +
+                    "5. 하나의 질문만 만들어줘\n" +
+            "6. 한국어로 작성");
+        
+        ChatMessage userMsg = new ChatMessage("user", 
+            "다음 질문을 사람의 어휘로 변환해주세요:\n" + originalQuestion);
+
+        ChatRequest requestBody = new ChatRequest(
+            model,
+            new ChatMessage[]{systemMsg, userMsg},
+            1000,  // 적절한 길이의 응답
+            0.7    // 적절한 창의성
         );
 
         HttpHeaders headers = new HttpHeaders();

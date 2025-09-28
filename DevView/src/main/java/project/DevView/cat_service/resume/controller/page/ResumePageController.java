@@ -43,7 +43,7 @@ public class ResumePageController {
         Long resumeId = resume.getId();
         
         // 2. 태그 및 질문 생성 시작 (비동기)
-        resumeTagService.generateTagsAndQuestions(resumeId);
+        resumeService.generateTagsAndQuestions(resumeId);
         
         // 3. 생성 상태 확인 페이지로 이동
         return "redirect:/resume-interview/" + resumeId + "/generating";

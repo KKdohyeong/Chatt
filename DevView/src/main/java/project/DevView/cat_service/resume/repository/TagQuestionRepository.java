@@ -36,4 +36,23 @@ public interface TagQuestionRepository extends JpaRepository<TagQuestion, Long> 
              AND tq.isCompleted = false
            """)
     long countByResumeTagIdAndIsCompletedFalse(@Param("resumeTagId") Long resumeTagId);
+
+    /** 특정 이력서의 모든 질문 중 완료되지 않은 질문 개수 */
+    @Query("""
+           SELECT COUNT(tq)
+           FROM TagQuestion tq
+           JOIN tq.resumeTag rt
+           WHERE rt.resume.id = :resumeId
+             AND tq.isCompleted = false
+           """)
+    long countIncompleteQuestionsByResumeId(@Param("resumeId") Long resumeId);
+
+    /** 특정 이력서의 모든 질문 개수 */
+    @Query("""
+           SELECT COUNT(tq)
+           FROM TagQuestion tq
+           JOIN tq.resumeTag rt
+           WHERE rt.resume.id = :resumeId
+           """)
+    long countTotalQuestionsByResumeId(@Param("resumeId") Long resumeId);
 }

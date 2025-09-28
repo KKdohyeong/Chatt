@@ -31,7 +31,7 @@ public class FollowUpQuestionController {
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal CustomUserDetails user) {
 
-        String userAnswer = body.get("answer");
+        String userAnswer = body.get("content");
         String followUpQuestion = followUpQuestionService.generateFollowUpQuestion(interviewId, userAnswer);
         
         return SuccessResponse.ok(responseService.getSingleResult(Map.of("followUpQuestion", followUpQuestion)));

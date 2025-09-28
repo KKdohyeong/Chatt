@@ -68,12 +68,28 @@ public class InterviewFlowService {
     }
 
     /**
+     * 질문을 COSTAR 형식으로 변환하여 반환
+     */
+    public String getConvertedQuestionContent(Question question) {
+        return chatGptService.convertQuestionToCostarFormat(question.getQuestion());
+    }
+
+    /**
      * (2) AI 질문 메시지 저장
      */
     public InterviewMessage createQuestionMessage(Long interviewId, Question q) {
         Interview iv = loadInterview(interviewId);
         InterviewMessage msg = InterviewMessageMapper.questionToMessage(iv, q);
         // ↓ setCreatedAt() 지우고 Auditing에 맡긴다
+        return messageRepository.save(msg);
+    }
+
+    /**
+     * (2) AI 질문 메시지 저장 (변환된 내용 사용)
+     */
+    public InterviewMessage createQuestionMessage(Long interviewId, Question q, String convertedContent) {
+        Interview iv = loadInterview(interviewId);
+        InterviewMessage msg = InterviewMessageMapper.questionToMessageWithContent(iv, q, convertedContent);
         return messageRepository.save(msg);
     }
 
